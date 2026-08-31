@@ -153,8 +153,9 @@ export async function POST(req: Request) {
 
   const html = `
     <div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#111">
-      <h2 style="margin:0 0 4px">New quote request — ${esc(sport.name)}</h2>
-      <p style="margin:0 0 16px;color:#666">Reference <strong>${ref}</strong></p>
+      <p style="margin:0 0 2px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;color:#b34a09">New Lead</p>
+      <h2 style="margin:0 0 4px;font-size:22px">${esc(contactName)} — ${esc(sport.name)} kit</h2>
+      <p style="margin:0 0 16px;color:#666">Reference <strong>${ref}</strong> &middot; reply to <a href="mailto:${esc(email)}">${esc(email)}</a></p>
       <table cellpadding="7" style="border-collapse:collapse;font-size:14px">
         ${rows.map(([k, v]) => cell(k, v)).join("")}
       </table>
@@ -185,7 +186,7 @@ export async function POST(req: Request) {
       from: fromAddress,
       to: studioAddresses,
       replyTo: `${contactName} <${email}>`,
-      subject: `Quote request ${ref} — ${sport.name} (${contactName})`,
+      subject: `New Lead: ${contactName} — ${sport.name} kit (${ref})`,
       text,
       html,
       attachments,

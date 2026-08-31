@@ -558,9 +558,11 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
 
 function Legend({ n, title }: { n: string; title: string }) {
   return (
-    <div className="flex items-center gap-3 border-b border-line pb-3">
-      <span className="font-display text-2xl text-volt">{n}</span>
-      <h2 className="display-3 text-xl">{title}</h2>
+    <div className="flex items-center gap-3 border-b-2 border-line-strong pb-3">
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[8px] bg-lime font-display text-xl leading-none text-volt-ink">
+        {n}
+      </span>
+      <h2 className="display-3 text-2xl font-bold text-paper sm:text-3xl">{title}</h2>
     </div>
   );
 }
