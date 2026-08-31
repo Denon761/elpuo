@@ -1,0 +1,286 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------ *
+   Elpuo design tokens
+ * ------------------------------------------------------------------ */
+@theme {
+  --font-display: var(--font-anton), "Arial Narrow", system-ui, sans-serif;
+  --font-sans: var(--font-grotesk), ui-sans-serif, system-ui, sans-serif;
+
+  /* --- palette (light — the only theme) ------------------------------ */
+  --color-ink: #efece3;
+  --color-ink-2: #f8f6ef;
+  --color-ink-3: #e5e1d4;
+  --color-paper: #16161a;
+  --color-paper-2: #2b2b31;
+  --color-mist: #6c6b62;
+
+  /* brand = orange. `volt` = accent for text/borders/tints;
+     `lime` = solid fill; `volt-ink` = text on the solid fill. */
+  --color-volt: #b34a09;
+  --color-volt-2: #f26a21;
+  --color-lime: #f26a21;
+  --color-volt-ink: #ffffff;
+  --color-blaze: #ffb020;
+  --color-ember: #e5484d;
+
+  --color-line: rgba(19, 18, 12, 0.16);
+  --color-line-strong: rgba(19, 18, 12, 0.3);
+  --color-line-ink: rgba(11, 11, 12, 0.14);
+  --color-wash: rgba(19, 18, 12, 0.05);
+
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+:root {
+  color-scheme: light;
+}
+
+/* ------------------------------------------------------------------ *
+   Base
+ * ------------------------------------------------------------------ */
+* {
+  border-color: var(--color-line);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scrollbar-gutter: stable;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html:focus-within {
+    scroll-behavior: smooth;
+  }
+}
+
+body {
+  background: var(--color-ink);
+  color: var(--color-paper);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv05";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+  transition: background-color 0.3s var(--ease-out-expo),
+    color 0.3s var(--ease-out-expo);
+}
+
+::selection {
+  background: var(--color-lime);
+  color: var(--color-volt-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-volt);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 0.92;
+  text-transform: uppercase;
+}
+
+/* Fluid display sizing */
+.display-1 { font-size: clamp(2.9rem, 9vw, 8.5rem); }
+.display-2 { font-size: clamp(2.3rem, 6vw, 5rem); }
+.display-3 { font-size: clamp(1.7rem, 3.6vw, 3rem); }
+
+.kicker {
+  font-family: var(--font-sans);
+  text-transform: uppercase;
+  letter-spacing: 0.28em;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------------------ *
+   Utilities
+ * ------------------------------------------------------------------ */
+.container-x {
+  width: 100%;
+  max-width: 1400px;
+  margin-inline: auto;
+  padding-inline: clamp(1.15rem, 4vw, 3.5rem);
+}
+
+.grid-lines {
+  background-image:
+    linear-gradient(var(--color-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-line) 1px, transparent 1px);
+  background-size: 64px 64px;
+  background-position: -1px -1px;
+}
+
+.noise::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.06;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.hairline {
+  border-top: 1px solid var(--color-line);
+}
+
+.link-underline {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0% 1px;
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  transition: background-size 0.35s var(--ease-out-expo);
+}
+.link-underline:hover {
+  background-size: 100% 1px;
+}
+
+/* Section on paper — a permanently light "editorial" band in both themes.
+   Re-pins the palette so nested utilities render dark-on-light regardless
+   of the active page theme. */
+.on-paper {
+  color-scheme: light;
+  --color-ink: #0b0b0c;
+  --color-ink-2: #ffffff;
+  --color-ink-3: #f0ede3;
+  --color-paper: #f5f4ef;
+  --color-paper-2: #e9e7dd;
+  --color-mist: #74736b;
+  --color-volt: #b34a09;
+  --color-line: rgba(11, 11, 12, 0.14);
+  --color-line-strong: rgba(11, 11, 12, 0.24);
+  --color-wash: rgba(11, 11, 12, 0.045);
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
+
+/* Permanently dark surface (jersey preview stages, product thumbnails) —
+   keeps light text/controls legible regardless of the active page theme. */
+.on-dark {
+  color-scheme: dark;
+  --color-ink: #0b0b0c;
+  --color-ink-2: #141416;
+  --color-ink-3: #1d1d20;
+  --color-paper: #f5f4ef;
+  --color-paper-2: #e9e7dd;
+  --color-mist: #9a9a92;
+  --color-volt: #ff8a3d;
+  --color-line: rgba(255, 255, 255, 0.12);
+  --color-line-strong: rgba(255, 255, 255, 0.22);
+  --color-wash: rgba(255, 255, 255, 0.05);
+}
+
+/* ------------------------------------------------------------------ *
+   Motion
+ * ------------------------------------------------------------------ */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee var(--marquee-duration, 32s) linear infinite;
+}
+.marquee-paused:hover .animate-marquee {
+  animation-play-state: paused;
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-18px) rotate(2deg); }
+}
+.animate-float {
+  animation: float-slow 9s ease-in-out infinite;
+}
+
+@keyframes drift {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(4%, -3%, 0) scale(1.08); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+.animate-drift { animation: drift 24s ease-in-out infinite; }
+
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 0.8s var(--ease-out-expo),
+    transform 0.8s var(--ease-out-expo);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal { opacity: 1; transform: none; }
+}
+
+/* ------------------------------------------------------------------ *
+   Forms — in @layer so Tailwind utilities (w-*, py-*, flex-1 …) can
+   still override these on individual fields.
+ * ------------------------------------------------------------------ */
+@layer components {
+  .field {
+    width: 100%;
+    background: var(--color-ink-2);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-sm);
+    padding: 0.85rem 1rem;
+    font-size: 0.95rem;
+    color: var(--color-paper);
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .field::placeholder {
+    color: var(--color-mist);
+  }
+  .field:focus {
+    outline: none;
+    border-color: var(--color-volt);
+    background: var(--color-ink-3);
+  }
+
+  .field-label {
+    display: block;
+    font-size: 0.7rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--color-mist);
+  }
+}
+
+/* Hide number input spinners */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] { -moz-appearance: textfield; }
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--color-ink); }
+::-webkit-scrollbar-thumb {
+  background: var(--color-ink-3);
+  border-radius: 999px;
+  border: 2px solid var(--color-ink);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--color-line-strong); }
