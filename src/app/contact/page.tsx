@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "Contact",
   description:
     "Talk to an Elpuo kit specialist about custom uniforms, bulk club programmes, sizing kits and artwork.",
+  alternates: { canonical: "/contact" },
 };
 
 const CHANNELS = [
@@ -47,12 +48,12 @@ export default function ContactPage() {
                 key={c.k}
                 className="rounded-md border border-line bg-ink-2 p-6"
               >
-                <p className="kicker text-paper/40">{c.k}</p>
+                <p className="kicker text-paper/60">{c.k}</p>
                 <p className="mt-2 font-display text-2xl text-paper">{c.v}</p>
-                <p className="mt-1 text-xs text-paper/45">{c.note}</p>
+                <p className="mt-1 text-xs text-paper/60">{c.note}</p>
               </div>
             ))}
-            <p className="px-1 pt-2 text-xs text-paper/40">
+            <p className="px-1 pt-2 text-xs text-paper/60">
               This form is a demo — it doesn&apos;t send email yet. Wire it to your
               provider before launch.
             </p>

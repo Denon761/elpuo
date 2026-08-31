@@ -48,7 +48,7 @@ export function ProductGallery({ sport }: { sport: Sport }) {
         <div className="relative aspect-[4/5] overflow-hidden rounded-lg border border-line bg-[#f1f0ec]">
           <Image
             src={current.src}
-            alt={`Custom ${sport.name} uniform — ${current.label}`}
+            alt={`${current.label} custom ${sport.name} jersey — sublimated ${sport.name} team uniform by Elpuo`}
             fill
             sizes="(max-width: 1024px) 100vw, 620px"
             className="object-contain"
@@ -67,7 +67,7 @@ export function ProductGallery({ sport }: { sport: Sport }) {
                 key={img.src}
                 type="button"
                 onClick={() => setActive(i)}
-                aria-label={img.label}
+                aria-label={`${img.label} ${sport.name} jersey view`}
                 aria-pressed={on}
                 className={`relative aspect-square overflow-hidden rounded-md border bg-[#f1f0ec] transition-colors ${
                   on ? "border-volt ring-1 ring-volt" : "border-line hover:border-line-strong"
@@ -101,7 +101,7 @@ export function ProductGallery({ sport }: { sport: Sport }) {
         className="on-dark relative aspect-[4/5] overflow-hidden rounded-lg border border-line"
         style={stageStyle}
       >
-        <span className="kicker absolute left-5 top-5 z-10 text-paper/50">Rendered preview</span>
+        <span className="kicker absolute left-5 top-5 z-10 text-paper/60">Rendered preview</span>
         <JerseyPreview
           silhouette={sport.silhouette}
           colors={views[idx].colors}
@@ -144,7 +144,7 @@ export function ProductGallery({ sport }: { sport: Sport }) {
         })}
       </div>
 
-      <p className="mt-3 text-xs text-paper/40">
+      <p className="mt-3 text-xs text-paper/60">
         These are rendered previews. Swap in real photos via{" "}
         <code className="text-paper/60">sport.images</code> in{" "}
         <code className="text-paper/60">src/lib/catalog.ts</code>.

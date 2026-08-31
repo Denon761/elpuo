@@ -1,7 +1,15 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useRef, useState } from "react";
+import {
+  cloneElement,
+  isValidElement,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type ReactElement,
+} from "react";
 import { MIN_ORDER_QTY, SIZES } from "@/lib/catalog";
 import { useUploadThing } from "@/lib/uploadthing";
 import type { OptionGroup, Sport } from "@/lib/types";
@@ -149,6 +157,23 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
         ? "Wait for the upload to finish"
         : "Re-select your reference file — it didn't upload";
     setFieldErrors(e);
+
+    // Move focus to the first field in error so screen-reader and keyboard
+    // users are taken straight to what needs fixing.
+    const firstError =
+      (["contactName", "email", "country"] as const).find((k) => e[k]) ??
+      (e.sizes ? "sizes" : e.file ? "file" : undefined);
+    if (firstError) {
+      const el =
+        firstError === "sizes"
+          ? document.getElementById("qf-sizes-first")
+          : firstError === "file"
+            ? fileInput.current
+            : document.getElementById(`qf-${firstError}`);
+      el?.focus();
+      el?.scrollIntoView({ block: "center", behavior: "smooth" });
+    }
+
     return Object.keys(e).length === 0;
   }
 
@@ -201,7 +226,7 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
 
   if (status === "sent") {
     return (
-      <div className="rounded-lg border border-volt/50 bg-volt/10 p-8">
+      <div className="rounded-lg border border-volt/50 bg-volt/10 p-8" role="status">
         <p className="kicker text-volt">Request received</p>
         <h2 className="display-3 mt-3 text-2xl">
           Thanks, {c.contactName.split(" ")[0] || "there"}.
@@ -220,8 +245,12 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
           {groups.map((g) =>
             g.type === "single" ? (
               <div key={g.id}>
-                <p className="field-label">{g.label}</p>
-                <div className="flex flex-wrap gap-2">
+                <p className="field-label" id={`grp-${g.id}`}>{g.label}</p>
+                <div
+                  className="flex flex-wrap gap-2"
+                  role="group"
+                  aria-labelledby={`grp-${g.id}`}
+                >
                   {g.options.map((o) => {
                     const on = selections[g.id] === o.id;
                     return (
@@ -244,8 +273,12 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
               </div>
             ) : (
               <div key={g.id}>
-                <p className="field-label">{g.label}</p>
-                <div className="flex flex-wrap gap-2">
+                <p className="field-label" id={`grp-${g.id}`}>{g.label}</p>
+                <div
+                  className="flex flex-wrap gap-2"
+                  role="group"
+                  aria-labelledby={`grp-${g.id}`}
+                >
                   {g.options.map((o) => {
                     const on = ((selections[g.id] as string[]) ?? []).includes(o.id);
                     return (
@@ -273,24 +306,32 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
           {/* size quantities */}
           <div>
             <div className="flex items-baseline justify-between">
-              <p className="field-label mb-0">
+              <p className="field-label mb-0" id="grp-sizes">
                 Quantity by size{" "}
-                <span className="text-paper/35">(min. {MIN_ORDER_QTY})</span>
+                <span className="text-paper/55">(min. {MIN_ORDER_QTY})</span>
               </p>
-              <p className="text-xs text-paper/45">
+              <p className="text-xs text-paper/60" aria-live="polite">
                 Total <span className="text-paper/80">{totalQty}</span>
               </p>
             </div>
-            <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-5">
-              {SIZES.map((s) => (
+            <div
+              className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-5"
+              role="group"
+              aria-labelledby="grp-sizes"
+              aria-describedby={fieldErrors.sizes ? "err-sizes" : undefined}
+            >
+              {SIZES.map((s, i) => (
                 <label key={s} className="flex flex-col">
-                  <span className="text-center text-[0.65rem] uppercase tracking-wide text-paper/45">
+                  <span className="text-center text-[0.65rem] uppercase tracking-wide text-paper/60">
                     {s}
                   </span>
                   <input
+                    id={i === 0 ? "qf-sizes-first" : undefined}
                     type="number"
                     min={0}
                     inputMode="numeric"
+                    aria-label={`Quantity, size ${s}`}
+                    aria-invalid={fieldErrors.sizes ? true : undefined}
                     value={sizes[s] ?? ""}
                     onChange={(e) =>
                       setSizes((p) => ({ ...p, [s]: Math.max(0, Number(e.target.value) || 0) }))
@@ -302,7 +343,9 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
               ))}
             </div>
             {fieldErrors.sizes && (
-              <p className="mt-1 text-xs text-ember">{fieldErrors.sizes}</p>
+              <p id="err-sizes" role="alert" className="mt-1 text-xs font-medium text-ember">
+                {fieldErrors.sizes}
+              </p>
             )}
           </div>
 
@@ -311,10 +354,10 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
             <div className="flex items-baseline justify-between">
               <p className="field-label mb-0">
                 Player names &amp; numbers{" "}
-                <span className="text-paper/35">(optional)</span>
+                <span className="text-paper/55">(optional)</span>
               </p>
               {players.length > 0 && (
-                <p className="text-xs text-paper/45">
+                <p className="text-xs text-paper/60">
                   {players.length} player{players.length === 1 ? "" : "s"}
                 </p>
               )}
@@ -324,7 +367,7 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
               <ul className="mt-3 space-y-2">
                 {players.map((p, i) => (
                   <li key={p.id} className="flex items-center gap-2">
-                    <span className="w-6 shrink-0 text-center text-xs font-semibold text-paper/40">
+                    <span className="w-6 shrink-0 text-center text-xs font-semibold text-paper/60">
                       {i + 1}
                     </span>
                     <input
@@ -350,7 +393,7 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
                       type="button"
                       onClick={() => removePlayer(p.id)}
                       aria-label={`Remove player ${i + 1}`}
-                      className="grid h-8 w-8 shrink-0 place-items-center rounded-[6px] border border-line text-paper/40 transition-colors hover:border-ember hover:text-ember"
+                      className="grid h-10 w-10 shrink-0 place-items-center rounded-[6px] border border-line text-paper/60 transition-colors hover:border-ember hover:text-ember"
                     >
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                         <path d="M6 6l12 12M18 6L6 18" />
@@ -380,13 +423,16 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
         <Legend n="2" title="Reference design" />
         <div className="mt-5 space-y-4">
           <div>
-            <p className="field-label">Upload the design you have in mind</p>
-            <label className="flex cursor-pointer items-center gap-4 rounded-md border border-dashed border-line-strong bg-ink-2 p-4 transition-colors hover:border-volt">
+            <p className="field-label" id="grp-file">Upload the design you have in mind</p>
+            <label className="file-drop flex cursor-pointer items-center gap-4 rounded-md border border-dashed border-line-strong bg-ink-2 p-4 transition-colors hover:border-volt">
               <input
                 ref={fileInput}
                 type="file"
                 accept="image/*,.pdf,.ai,.eps"
                 onChange={onFile}
+                aria-labelledby="grp-file"
+                aria-describedby="file-status"
+                aria-invalid={fieldErrors.file ? true : undefined}
                 className="sr-only"
               />
               {filePreview ? (
@@ -397,7 +443,7 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
                   className="h-16 w-16 rounded-sm object-cover"
                 />
               ) : (
-                <span className="grid h-16 w-16 shrink-0 place-items-center rounded-sm border border-line text-paper/40">
+                <span className="grid h-16 w-16 shrink-0 place-items-center rounded-sm border border-line text-paper/60">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M12 16V4m0 0 4 4m-4-4L8 8" />
                     <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
@@ -408,7 +454,11 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
                 <span className="font-semibold text-paper">
                   {file ? file.name : "Choose a file"}
                 </span>
-                <span className="mt-0.5 block text-xs text-paper/45">
+                <span
+                  id="file-status"
+                  className="mt-0.5 block text-xs text-paper/60"
+                  aria-live="polite"
+                >
                   {isUploading
                     ? "Uploading…"
                     : referenceUrl
@@ -427,7 +477,9 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
                   </a>
                 )}
                 {fieldErrors.file && (
-                  <span className="mt-0.5 block text-xs text-ember">{fieldErrors.file}</span>
+                  <span role="alert" className="mt-0.5 block text-xs font-medium text-ember">
+                    {fieldErrors.file}
+                  </span>
                 )}
               </span>
             </label>
@@ -461,6 +513,7 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
           <div className="grid gap-x-4 gap-y-5 sm:grid-cols-2">
             <Field label="Your name" required error={fieldErrors.contactName}>
               <input
+                id="qf-contactName"
                 className={fieldCls(fieldErrors.contactName)}
                 placeholder="Alex Morgan"
                 autoComplete="name"
@@ -475,6 +528,7 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
               error={fieldErrors.email}
             >
               <input
+                id="qf-email"
                 type="email"
                 inputMode="email"
                 autoComplete="email"
@@ -491,6 +545,7 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
               error={fieldErrors.country}
             >
               <input
+                id="qf-country"
                 className={fieldCls(fieldErrors.country)}
                 placeholder="United Kingdom"
                 autoComplete="country-name"
@@ -500,6 +555,7 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
             </Field>
             <Field label="Phone" hint="Only if you'd rather we call you">
               <input
+                id="qf-phone"
                 type="tel"
                 autoComplete="tel"
                 className={fieldCls()}
@@ -510,6 +566,7 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
             </Field>
             <Field label="Club / organisation">
               <input
+                id="qf-organization"
                 className={fieldCls()}
                 placeholder="Riverside Hockey Club"
                 autoComplete="organization"
@@ -519,6 +576,7 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
             </Field>
             <Field label="City">
               <input
+                id="qf-city"
                 className={fieldCls()}
                 placeholder="Manchester"
                 autoComplete="address-level2"
@@ -531,7 +589,10 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
       </section>
 
       {status === "error" && (
-        <p className="rounded-md border border-ember/40 bg-ember/10 px-4 py-3 text-sm text-ember">
+        <p
+          role="alert"
+          className="rounded-md border border-ember/40 bg-ember/10 px-4 py-3 text-sm font-medium text-ember"
+        >
           {errorMsg}
         </p>
       )}
@@ -548,7 +609,7 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
               ? "Uploading design…"
               : "Submit quote request"}
         </button>
-        <p className="mt-3 text-xs text-paper/45">
+        <p className="mt-3 text-xs text-paper/60">
           No payment now. We reply with a firm quote and a proof within one business day.
         </p>
       </div>
@@ -580,23 +641,53 @@ function Field({
   error?: string;
   children: React.ReactNode;
 }) {
+  const uid = useId();
+  const controlId =
+    (isValidElement(children) &&
+      (children.props as { id?: string }).id) ||
+    `${uid}-field`;
+  const hintId = `${uid}-hint`;
+  const errId = `${uid}-err`;
+  const describedBy =
+    [error ? errId : null, hint && !error ? hintId : null]
+      .filter(Boolean)
+      .join(" ") || undefined;
+
   return (
     <div>
-      <label className="mb-1.5 flex items-center gap-2">
+      <label htmlFor={controlId} className="mb-1.5 flex items-center gap-2">
         <span className="text-[0.82rem] font-semibold text-paper">{label}</span>
         {required ? (
           <span className="rounded-full bg-volt/15 px-1.5 py-0.5 text-[0.58rem] font-bold uppercase tracking-[0.1em] text-volt">
             Required
           </span>
         ) : (
-          <span className="text-[0.58rem] font-semibold uppercase tracking-[0.12em] text-paper/30">
+          <span className="text-[0.58rem] font-semibold uppercase tracking-[0.12em] text-paper/55">
             Optional
           </span>
         )}
       </label>
-      {children}
-      {hint && !error && <p className="mt-1.5 text-xs text-paper/45">{hint}</p>}
-      {error && <p className="mt-1.5 text-xs font-medium text-ember">{error}</p>}
+      {isValidElement(children)
+        ? cloneElement(
+            children as ReactElement<Record<string, unknown>>,
+            {
+              id: controlId,
+              "aria-invalid": error ? true : undefined,
+              "aria-required": required || undefined,
+              "aria-describedby": describedBy,
+            }
+          )
+        : children}
+      {hint && !error && (
+        <p id={hintId} className="mt-1.5 text-xs text-paper/60">
+          {hint}
+        </p>
+      )}
+      {error && (
+        <p id={errId} role="alert" className="mt-1.5 text-xs font-medium text-ember">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

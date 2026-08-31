@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "Privacy Policy",
   description:
     "What personal data Elpuo collects when you configure a kit and request a quotation, how it's used and your rights.",
+  alternates: { canonical: "/policies/privacy" },
 };
 
 export default function Page() {

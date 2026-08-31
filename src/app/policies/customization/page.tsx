@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "Artwork & Customization Policy",
   description:
     "How Elpuo handles logos, sublimation artwork, names and numbers, proofs and approvals for custom uniform orders.",
+  alternates: { canonical: "/policies/customization" },
 };
 
 export default function Page() {

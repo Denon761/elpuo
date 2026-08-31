@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "How It Works",
   description:
     "From picking a sport to matchday delivery — how Elpuo turns your fabric choices, sizes and uploaded design into produced, shipped custom uniforms.",
+  alternates: { canonical: "/how-it-works" },
 };
 
 const PHASES = [

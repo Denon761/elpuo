@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "Terms of Service",
   description:
     "The terms that apply when you use the Elpuo website, request a quotation and place a custom uniform order.",
+  alternates: { canonical: "/policies/terms" },
 };
 
 export default function Page() {

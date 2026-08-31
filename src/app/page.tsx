@@ -1,10 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ButtonLink } from "@/components/ui/Button";
+import { JsonLd } from "@/components/site/JsonLd";
 import { MarqueeStrip } from "@/components/site/MarqueeStrip";
 import { Reveal } from "@/components/site/Reveal";
 import { SportCard } from "@/components/site/SportCard";
 import { SPORTS } from "@/lib/catalog";
+import { abs } from "@/lib/site";
 
 const STEPS = [
   {
@@ -78,9 +80,33 @@ const FAQS = [
   },
 ];
 
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "@id": abs("/#faq"),
+  mainEntity: FAQS.map((f) => ({
+    "@type": "Question",
+    name: f.q,
+    acceptedAnswer: { "@type": "Answer", text: f.a },
+  })),
+};
+
+const sportsListSchema = {
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  name: "Custom sports uniforms by sport",
+  itemListElement: SPORTS.map((s, i) => ({
+    "@type": "ListItem",
+    position: i + 1,
+    name: `Custom ${s.name} Uniforms`,
+    url: abs(`/sports/${s.slug}`),
+  })),
+};
+
 export default function HomePage() {
   return (
     <>
+      <JsonLd data={[faqSchema, sportsListSchema]} />
       {/* ---------------------------------------------------------- HERO */}
       <section className="noise relative overflow-hidden bg-ink pt-28 md:pt-36">
         <div
@@ -119,18 +145,6 @@ export default function HomePage() {
                   How it works
                 </ButtonLink>
               </div>
-            </Reveal>
-            <Reveal delay={240}>
-              <dl className="mx-auto mt-12 grid max-w-lg grid-cols-3 gap-6 border-t border-line pt-6">
-                {STATS.slice(0, 3).map((s) => (
-                  <div key={s.v}>
-                    <dt className="font-display text-2xl text-paper md:text-3xl">
-                      {s.k}
-                    </dt>
-                    <dd className="mt-1 text-xs text-paper/50">{s.v}</dd>
-                  </div>
-                ))}
-              </dl>
             </Reveal>
           </div>
         </div>
@@ -184,7 +198,7 @@ export default function HomePage() {
       <section className="on-paper py-20 md:py-28">
         <div className="container-x">
           <Reveal>
-            <p className="kicker text-ink/50">Everything is customizable</p>
+            <p className="kicker text-ink/60">Everything is customizable</p>
           </Reveal>
           <Reveal delay={60}>
             <h2 className="display-2 mt-4 max-w-3xl">
@@ -199,7 +213,7 @@ export default function HomePage() {
                   <span className="font-display text-4xl text-ink/15">
                     {String(i + 1).padStart(2, "0")}
                   </span>
-                  <h3 className="display-3 text-2xl">{f.title}</h3>
+                  <h3 className="display-3 text-2xl text-ink">{f.title}</h3>
                   <p className="text-ink/65">{f.body}</p>
                 </div>
               </Reveal>

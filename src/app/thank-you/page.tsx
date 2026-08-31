@@ -39,7 +39,7 @@ export default async function ThankYouPage({
           firm quote and a digital proof.
         </p>
 
-        <p className="mt-4 text-sm text-paper/45">
+        <p className="mt-4 text-sm text-paper/60">
           Nothing has been charged. Questions? Email{" "}
           <a href={`mailto:${CONTACT_EMAIL}`} className="text-volt link-underline">
             {CONTACT_EMAIL}

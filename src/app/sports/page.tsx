@@ -6,7 +6,8 @@ import { SPORTS } from "@/lib/catalog";
 export const metadata: Metadata = {
   title: "All Custom Sports Uniforms",
   description:
-    "Browse custom uniform builders for handball, netball, field hockey, volleyball, rugby, cricket, baseball, basketball, soccer and American football.",
+    "Browse custom uniform builders for handball, netball, field hockey, volleyball, rugby, cricket, baseball, basketball, soccer (football) and American football.",
+  alternates: { canonical: "/sports" },
 };
 
 export default function SportsIndexPage() {

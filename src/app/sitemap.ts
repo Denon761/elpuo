@@ -1,9 +1,10 @@
 import type { MetadataRoute } from "next";
 import { SPORTS } from "@/lib/catalog";
-
-const BASE = "https://elpuo.example";
+import { abs } from "@/lib/site";
 
 export default function sitemap(): MetadataRoute.Sitemap {
+  const now = new Date();
+
   const staticRoutes = [
     "",
     "/sports",
@@ -20,16 +21,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return [
     ...staticRoutes.map((path) => ({
-      url: `${BASE}${path}`,
-      lastModified: new Date(),
+      url: abs(path || "/"),
+      lastModified: now,
       changeFrequency: "monthly" as const,
       priority: path === "" ? 1 : 0.7,
     })),
     ...SPORTS.map((s) => ({
-      url: `${BASE}/sports/${s.slug}`,
-      lastModified: new Date(),
+      url: abs(`/sports/${s.slug}`),
+      lastModified: now,
       changeFrequency: "monthly" as const,
       priority: 0.9,
+      images: (s.images ?? []).map((img) => abs(img.src)),
     })),
   ];
 }

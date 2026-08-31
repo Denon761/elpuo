@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "Returns & Remakes Policy",
   description:
     "How Elpuo handles returns, remakes and defects on custom-made sports uniforms.",
+  alternates: { canonical: "/policies/returns" },
 };
 
 export default function Page() {

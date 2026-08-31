@@ -33,7 +33,7 @@ export function NewsletterField() {
       />
       <button
         type="submit"
-        className="shrink-0 rounded-[8px] bg-lime px-4 py-[0.85rem] text-[0.7rem] font-bold uppercase tracking-[0.12em] text-volt-ink transition-colors hover:bg-white"
+        className="shrink-0 rounded-[8px] bg-lime px-4 py-[0.85rem] text-[0.7rem] font-bold uppercase tracking-[0.12em] text-volt-ink transition-opacity hover:opacity-90"
       >
         Join
       </button>

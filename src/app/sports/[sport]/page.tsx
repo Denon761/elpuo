@@ -3,9 +3,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { QuoteForm } from "@/components/product/QuoteForm";
+import { JsonLd } from "@/components/site/JsonLd";
 import { Reveal } from "@/components/site/Reveal";
 import { MIN_ORDER_QTY, SPORTS, getSport, groupsFor } from "@/lib/catalog";
 import { usd } from "@/lib/format";
+import { abs, FACTS, ORG } from "@/lib/site";
 
 export function generateStaticParams() {
   return SPORTS.map((s) => ({ sport: s.slug }));
@@ -19,30 +21,30 @@ export async function generateMetadata({
   const { sport: slug } = await params;
   const sport = getSport(slug);
   if (!sport) return { title: "Sport not found" };
+
+  const title = sport.seoTitle ?? `Custom ${sport.name} Uniforms`;
+  const path = `/sports/${sport.slug}`;
+  const image = sport.images?.[0]?.src;
+
   return {
-    title: `Custom ${sport.name} Uniforms`,
-    description: `${sport.blurb} From ${usd(sport.unitBase)} per unit. Choose fabric and decoration, upload your design and request a quote.`,
+    title,
+    description: sport.metaDescription,
+    keywords: [
+      `custom ${sport.name.toLowerCase()} uniforms`,
+      `custom ${sport.name.toLowerCase()} jerseys`,
+      ...(sport.aka ?? []).map((a) => `custom ${a.toLowerCase()} kit`),
+      "sublimated teamwear",
+    ],
+    alternates: { canonical: path },
+    openGraph: {
+      title: `${title} · Elpuo`,
+      description: sport.metaDescription,
+      url: path,
+      type: "website",
+      ...(image ? { images: [{ url: image, alt: `Custom ${sport.name} uniform` }] } : {}),
+    },
   };
 }
-
-const INFO = [
-  {
-    h: "What's included",
-    p: "Your chosen fabric, decoration method and kit pieces, made to order. Names, numbers and crests are applied in-house and quality-checked against your approved proof before packing.",
-  },
-  {
-    h: "Materials & care",
-    p: "Recycled-content polyester knits, OEKO-TEX certified inks. Machine wash cold inside-out, hang dry, no ironing directly on print. Sublimation and twill both rated for a full competitive season.",
-  },
-  {
-    h: "Production & lead time",
-    p: "Standard production is roughly 14 working days from artwork approval. A digital proof is issued within 2 business days of your request — nothing goes to print without your sign-off.",
-  },
-  {
-    h: "Sizing",
-    p: "Youth YS–YL and adult XS–3XL on every block, with women's and athletic cuts available. Ask for a sizing kit in your request if the squad needs to try before committing.",
-  },
-];
 
 export default async function SportPage({
   params,
@@ -55,9 +57,82 @@ export default async function SportPage({
 
   const groups = groupsFor(sport);
   const related = SPORTS.filter((s) => s.slug !== sport.slug).slice(0, 5);
+  const path = `/sports/${sport.slug}`;
+
+  /* Shared operational facts — authored once in FACTS, so shipping, sizing,
+     the sport pages and the FAQs can never disagree. */
+  const OPS = [
+    {
+      h: "Materials & care",
+      p: "Recycled-content polyester knits, OEKO-TEX certified inks. Machine wash cold inside-out, hang dry, no ironing directly on print. Sublimation and twill are both rated for a full competitive season.",
+    },
+    {
+      h: "Production & lead time",
+      p: `Standard production is roughly ${FACTS.productionDays} working days from artwork approval. A digital proof is issued within ${FACTS.proofDays} business days of your request — nothing goes to print without your sign-off.`,
+    },
+    {
+      h: "Sizing",
+      p: `${FACTS.sizeRange} on every block, with women's and athletic cuts available. Ask for a sizing kit in your request if the squad needs to try before committing.`,
+    },
+    {
+      h: "Minimum order & pricing",
+      p: `Minimum ${MIN_ORDER_QTY} units per order, mixed sizes allowed. The "from" price is indicative per unit; your firm quote depends on fabric, decoration and quantity.`,
+    },
+  ];
+
+  const productSchema = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "@id": abs(`${path}#product`),
+    name: `Custom ${sport.name} Uniform`,
+    description: sport.metaDescription,
+    category: `Custom ${sport.name} teamwear`,
+    ...(sport.images?.length
+      ? { image: sport.images.map((i) => abs(i.src)) }
+      : {}),
+    brand: { "@type": "Brand", name: ORG.name },
+    audience: { "@type": "Audience", audienceType: "Sports clubs, schools and academies" },
+    offers: {
+      "@type": "AggregateOffer",
+      priceCurrency: FACTS.priceCurrency,
+      lowPrice: sport.unitBase,
+      offerCount: SPORTS.length,
+      availability: "https://schema.org/InStock",
+      url: abs(path),
+      seller: { "@id": abs("/#organization") },
+      eligibleQuantity: {
+        "@type": "QuantitativeValue",
+        minValue: MIN_ORDER_QTY,
+        unitText: "units",
+      },
+    },
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: abs("/") },
+      { "@type": "ListItem", position: 2, name: "Sports", item: abs("/sports") },
+      { "@type": "ListItem", position: 3, name: sport.name, item: abs(path) },
+    ],
+  };
+
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "@id": abs(`${path}#faq`),
+    mainEntity: sport.faqs.map((f) => ({
+      "@type": "Question",
+      name: f.q,
+      acceptedAnswer: { "@type": "Answer", text: f.a },
+    })),
+  };
 
   return (
     <>
+      <JsonLd data={[productSchema, breadcrumbSchema, faqSchema]} />
+
       <section className="noise relative overflow-hidden bg-ink pb-8 pt-28 md:pt-36">
         <div
           aria-hidden
@@ -68,12 +143,14 @@ export default async function SportPage({
         />
         <div className="container-x relative">
           <Reveal>
-            <nav className="kicker flex items-center gap-2 text-paper/40">
+            <nav aria-label="Breadcrumb" className="kicker flex items-center gap-2 text-paper/60">
               <Link href="/sports" className="hover:text-paper">
                 Sports
               </Link>
-              <span>/</span>
-              <span className="text-paper/70">{sport.name}</span>
+              <span aria-hidden>/</span>
+              <span className="text-paper/70" aria-current="page">
+                {sport.name}
+              </span>
             </nav>
           </Reveal>
           <div className="mt-5 flex flex-wrap items-end justify-between gap-6">
@@ -82,7 +159,10 @@ export default async function SportPage({
                 <p className="kicker text-volt">{sport.discipline}</p>
               </Reveal>
               <Reveal delay={100}>
-                <h1 className="display-1 mt-3">Custom {sport.name}</h1>
+                <h1 className="display-1 mt-3">
+                  Custom {sport.name}
+                  {sport.slug === "soccer" ? " / Football" : ""} Uniforms
+                </h1>
               </Reveal>
               <Reveal delay={150}>
                 <p className="mt-4 max-w-2xl text-lg text-paper/65">{sport.blurb}</p>
@@ -90,9 +170,9 @@ export default async function SportPage({
             </div>
             <Reveal delay={180}>
               <div className="rounded-md border border-line bg-ink-2 px-6 py-4 text-right">
-                <p className="kicker text-paper/40">from</p>
+                <p className="kicker text-paper/60">from</p>
                 <p className="font-display text-4xl text-volt">{usd(sport.unitBase)}</p>
-                <p className="mt-1 text-xs text-paper/45">
+                <p className="mt-1 text-xs text-paper/60">
                   per unit · indicative · min. {MIN_ORDER_QTY} units
                 </p>
               </div>
@@ -111,19 +191,30 @@ export default async function SportPage({
         </div>
       </section>
 
-      {/* info */}
+      {/* sport-specific detail */}
       <section className="on-paper py-20 md:py-24">
         <div className="container-x">
-          <h2 className="display-2 max-w-xl">The detail</h2>
+          <h2 className="display-2 max-w-xl">Built for {sport.name.toLowerCase()}</h2>
           <div className="mt-12 grid gap-px overflow-hidden rounded-lg border border-line-ink bg-line-ink md:grid-cols-2">
-            {INFO.map((block) => (
+            {sport.specifics.map((block) => (
               <div key={block.h} className="bg-paper p-8">
-                <h3 className="display-3 text-xl">{block.h}</h3>
+                <h3 className="display-3 text-xl text-ink">{block.h}</h3>
                 <p className="mt-2 text-ink/65">{block.p}</p>
               </div>
             ))}
           </div>
-          <p className="mt-6 text-sm text-ink/50">
+
+          <h2 className="display-3 mt-16 text-2xl">The essentials</h2>
+          <div className="mt-6 grid gap-px overflow-hidden rounded-lg border border-line-ink bg-line-ink md:grid-cols-2">
+            {OPS.map((block) => (
+              <div key={block.h} className="bg-paper p-8">
+                <h3 className="display-3 text-xl text-ink">{block.h}</h3>
+                <p className="mt-2 text-ink/65">{block.p}</p>
+              </div>
+            ))}
+          </div>
+
+          <p className="mt-6 text-sm text-ink/60">
             Full details in our{" "}
             <Link href="/policies/customization" className="link-underline font-semibold">
               artwork &amp; customization policy
@@ -134,6 +225,35 @@ export default async function SportPage({
             </Link>
             .
           </p>
+        </div>
+      </section>
+
+      {/* sport-specific FAQ */}
+      <section className="bg-ink py-20 md:py-24">
+        <div className="container-x grid gap-12 lg:grid-cols-[0.8fr_1.2fr]">
+          <div>
+            <h2 className="display-2">{sport.name} kit questions</h2>
+            <p className="mt-4 max-w-xs text-paper/60">
+              Specific to {sport.name.toLowerCase()}. For anything else,{" "}
+              <Link href="/contact" className="text-volt link-underline">
+                talk to a kit specialist
+              </Link>
+              .
+            </p>
+          </div>
+          <div className="divide-y divide-line border-y border-line">
+            {sport.faqs.map((f) => (
+              <details key={f.q} className="group py-5">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
+                  <span className="display-3 text-lg md:text-xl">{f.q}</span>
+                  <span className="font-display text-2xl text-volt transition-transform group-open:rotate-45">
+                    +
+                  </span>
+                </summary>
+                <p className="mt-3 max-w-2xl text-paper/65">{f.a}</p>
+              </details>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -162,7 +282,7 @@ export default async function SportPage({
                 <p className="mt-4 font-display text-sm uppercase leading-tight tracking-tight">
                   {s.name}
                 </p>
-                <p className="mt-1 text-xs text-paper/45">from {usd(s.unitBase)}</p>
+                <p className="mt-1 text-xs text-paper/60">from {usd(s.unitBase)}</p>
               </Link>
             ))}
           </div>

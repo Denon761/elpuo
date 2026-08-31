@@ -38,6 +38,15 @@ export function Header() {
     };
   }, [menuOpen]);
 
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [menuOpen]);
+
   return (
     <header
       className={`fixed inset-x-0 top-0 z-50 transition-colors duration-300 ${
@@ -65,15 +74,28 @@ export function Header() {
             className="relative"
             onMouseEnter={() => setSportsOpen(true)}
             onMouseLeave={() => setSportsOpen(false)}
+            onFocus={() => setSportsOpen(true)}
+            onBlur={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget as Node | null))
+                setSportsOpen(false);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") setSportsOpen(false);
+            }}
           >
             <Link
               href="/sports"
+              aria-expanded={sportsOpen}
+              aria-controls="sports-menu"
               className="kicker text-paper/75 transition-colors hover:text-paper"
             >
               Sports
             </Link>
             {sportsOpen && (
-              <div className="absolute left-1/2 top-full w-[560px] -translate-x-1/2 pt-5">
+              <div
+                id="sports-menu"
+                className="absolute left-1/2 top-full w-[560px] -translate-x-1/2 pt-5"
+              >
                 <div className="grid grid-cols-2 gap-1 rounded-md border border-line bg-ink-2 p-3 shadow-2xl">
                   {SPORTS.map((s) => (
                     <Link
@@ -118,9 +140,10 @@ export function Header() {
 
           <button
             type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-[8px] border border-line-strong lg:hidden"
+            className="flex h-11 w-11 items-center justify-center rounded-[8px] border border-line-strong lg:hidden"
             aria-label={menuOpen ? "Close menu" : "Open menu"}
             aria-expanded={menuOpen}
+            aria-controls="mobile-menu"
             onClick={() => setMenuOpen((v) => !v)}
           >
             <span className="relative block h-3 w-5">
@@ -145,7 +168,10 @@ export function Header() {
       </div>
 
       {menuOpen && (
-        <div className="h-[calc(100dvh-4rem)] overflow-y-auto bg-ink px-6 pb-10 pt-4 lg:hidden">
+        <div
+          id="mobile-menu"
+          className="h-[calc(100dvh-4rem)] overflow-y-auto bg-ink px-6 pb-10 pt-4 lg:hidden"
+        >
           <nav className="flex flex-col">
             {NAV.map((item) => (
               <Link
@@ -157,7 +183,7 @@ export function Header() {
               </Link>
             ))}
           </nav>
-          <p className="kicker mt-8 text-paper/40">Jump to a sport</p>
+          <p className="kicker mt-8 text-paper/60">Jump to a sport</p>
           <div className="mt-3 grid grid-cols-2 gap-2">
             {SPORTS.map((s) => (
               <Link

@@ -30,12 +30,30 @@ export interface ProductImage {
   label: string;
 }
 
+export interface SportFaq {
+  q: string;
+  a: string;
+}
+
 export interface Sport {
   slug: string;
   name: string;
   discipline: string;
   tagline: string;
   blurb: string;
+  /**
+   * Alternative / regional names for the sport (e.g. "Soccer" ↔ "Football").
+   * Used to target both terms in titles and metadata where it's genuine.
+   */
+  aka?: string[];
+  /** Unique <title> for the sport page. Falls back to `Custom {name} Uniforms`. */
+  seoTitle?: string;
+  /** Unique meta description — no shared boilerplate across sports. */
+  metaDescription: string;
+  /** Two sport-specific spec blocks that answer buyer questions directly. */
+  specifics: { h: string; p: string }[];
+  /** Genuinely sport-specific FAQs (rules, fabric, fit, decoration). */
+  faqs: SportFaq[];
   /** Indicative "from" price per unit, shown as guidance only. */
   unitBase: number;
   silhouette: Silhouette;

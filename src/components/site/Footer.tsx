@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { SPORTS } from "@/lib/catalog";
+import { ORG } from "@/lib/site";
 import { NewsletterField } from "./NewsletterField";
 
 const POLICIES = [
@@ -47,8 +48,10 @@ export function Footer() {
           <FooterCol title="Policies" links={POLICIES} />
         </div>
 
-        <div className="mt-16 flex flex-col gap-4 border-t border-line py-8 text-sm text-paper/45 md:flex-row md:items-center md:justify-between">
-          <p>© {new Date().getFullYear()} Elpuo Teamwear. All rights reserved.</p>
+        <div className="mt-16 flex flex-col gap-4 border-t border-line py-8 text-sm text-paper/60 md:flex-row md:items-center md:justify-between">
+          <p>
+            © {new Date().getFullYear()} {ORG.legalName}. All rights reserved.
+          </p>
           <p>
             Made for the ones who play. <span className="text-paper/25">·</span>{" "}
             Prices shown are indicative pending your quote.
@@ -76,7 +79,7 @@ function FooterCol({
 }) {
   return (
     <div>
-      <p className="kicker text-paper/40">{title}</p>
+      <p className="kicker text-paper/60">{title}</p>
       <ul className="mt-4 space-y-2.5">
         {links.map((l) => (
           <li key={l.href}>

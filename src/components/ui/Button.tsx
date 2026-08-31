@@ -8,7 +8,7 @@ const base =
   "inline-flex items-center justify-center gap-2 font-semibold uppercase tracking-[0.12em] rounded-[8px] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] disabled:opacity-40 disabled:pointer-events-none select-none";
 
 const variants: Record<Variant, string> = {
-  volt: "bg-lime text-volt-ink hover:bg-white hover:-translate-y-0.5 active:translate-y-0 shadow-[0_0_0_0_rgba(204,255,0,0.5)] hover:shadow-[0_10px_40px_-8px_rgba(204,255,0,0.55)]",
+  volt: "bg-lime text-volt-ink hover:opacity-90 hover:-translate-y-0.5 active:translate-y-0 shadow-[0_0_0_0_rgba(242,106,33,0.5)] hover:shadow-[0_10px_40px_-8px_rgba(242,106,33,0.55)]",
   solid: "bg-paper text-ink hover:bg-lime hover:text-volt-ink hover:-translate-y-0.5 active:translate-y-0",
   outline:
     "border border-line-strong text-paper hover:border-volt hover:text-volt hover:-translate-y-0.5",

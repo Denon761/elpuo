@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "Sizing Guide",
   description:
     "Elpuo custom uniform sizing — youth and adult ranges, fit blocks, sizing kits and how to measure.",
+  alternates: { canonical: "/policies/sizing" },
 };
 
 export default function Page() {

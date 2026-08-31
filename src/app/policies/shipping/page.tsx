@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "Shipping & Production Policy",
   description:
     "Elpuo production lead times, rush options, worldwide shipping, duties and delivery for custom uniform orders.",
+  alternates: { canonical: "/policies/shipping" },
 };
 
 export default function Page() {

@@ -19,7 +19,7 @@ export function PolicyArticle({ title, updated, intro, sections }: PolicyArticle
       <Reveal>
         <h1 className="display-2 text-4xl md:text-5xl">{title}</h1>
       </Reveal>
-      <p className="mt-3 text-xs uppercase tracking-[0.16em] text-paper/40">
+      <p className="mt-3 text-xs uppercase tracking-[0.16em] text-paper/60">
         Last updated {updated}
       </p>
       <p className="mt-6 max-w-2xl text-lg text-paper/70">{intro}</p>
@@ -35,7 +35,7 @@ export function PolicyArticle({ title, updated, intro, sections }: PolicyArticle
         ))}
       </div>
 
-      <p className="mt-14 border-t border-line pt-6 text-sm text-paper/40">
+      <p className="mt-14 border-t border-line pt-6 text-sm text-paper/60">
         Questions about this policy? Email{" "}
         <span className="text-paper/70">studio@elpuo.example</span>. This document
         is a plain-language summary of how we operate and is not legal advice —

@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "About",
   description:
     "Elpuo is a custom teamwear studio with an in-house sublimation floor, building uniforms for clubs, schools and academies across 10 sports.",
+  alternates: { canonical: "/about" },
 };
 
 const VALUES = [
@@ -66,7 +67,7 @@ export default function AboutPage() {
                   className="rounded-md border border-line bg-ink-2 p-6"
                 >
                   <p className="font-display text-3xl text-paper">{k}</p>
-                  <p className="mt-1 text-xs text-paper/50">{v}</p>
+                  <p className="mt-1 text-xs text-paper/60">{v}</p>
                 </div>
               ))}
             </div>

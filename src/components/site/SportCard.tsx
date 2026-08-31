@@ -24,14 +24,14 @@ export function SportCard({ sport, index }: { sport: Sport; index: number }) {
       >
         <span
           className={`absolute left-4 top-4 z-10 font-display text-sm ${
-            cover ? "text-white/70 mix-blend-difference" : "text-paper/40"
+            cover ? "text-white/70 mix-blend-difference" : "text-paper/60"
           }`}
         >
           {num}
         </span>
         <span
           className={`kicker absolute right-4 top-4 z-10 ${
-            cover ? "text-white/80 mix-blend-difference" : "text-paper/50"
+            cover ? "text-white/80 mix-blend-difference" : "text-paper/60"
           }`}
         >
           {sport.discipline.split(" / ")[0]}
@@ -70,7 +70,7 @@ export function SportCard({ sport, index }: { sport: Sport; index: number }) {
           <p className="mt-1 text-xs text-paper/55">{sport.tagline}</p>
         </div>
         <div className="shrink-0 text-right">
-          <p className="kicker text-[0.6rem] text-paper/40">from</p>
+          <p className="kicker text-[0.6rem] text-paper/60">from</p>
           <p className="font-display text-xl text-volt">{usd(sport.unitBase)}</p>
         </div>
       </div>
