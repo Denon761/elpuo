@@ -179,3 +179,69 @@ export function customerConfirmationEmail(input: CustomerConfirmationInput): {
     text,
   };
 }
+
+/* ------------------------------------------------------------------ *
+   Contact-form auto-reply — sent to whoever wrote in.
+ * ------------------------------------------------------------------ */
+
+export interface ContactAutoReplyInput {
+  firstName: string;
+  message: string;
+  contactEmail: string;
+}
+
+export function contactAutoReplyEmail(input: ContactAutoReplyInput): {
+  subject: string;
+  html: string;
+  text: string;
+} {
+  const { firstName, message, contactEmail } = input;
+  const hi = firstName ? `, ${esc(firstName)}` : "";
+
+  const html = `<!doctype html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>We got your message</title></head>
+<body style="margin:0;padding:0;background:${C.ground};">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.ground};">
+    <tr><td align="center" style="padding:32px 16px;">
+      <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="width:560px;max-width:100%;background:${C.card};border:1px solid ${C.line};border-radius:14px;overflow:hidden;font-family:${BODY_FONT};">
+        <tr><td style="background:${C.brand};padding:20px 32px;font-family:${HEAD_FONT};font-weight:700;text-transform:uppercase;letter-spacing:0.22em;font-size:20px;color:${C.white};">ELPUO</td></tr>
+        <tr><td style="padding:36px 32px 8px;">
+          <p style="margin:0 0 10px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.26em;color:${C.brandDark};">Message received</p>
+          <h1 style="margin:0 0 16px;font-family:${HEAD_FONT};font-weight:700;text-transform:uppercase;letter-spacing:0.02em;font-size:32px;line-height:1;color:${C.ink};">Thanks${hi}</h1>
+          <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:${C.body};">
+            We've got your message and a kit specialist will reply within one business day. If your enquiry is about a specific kit, the fastest route to a price is always the <a href="https://www.elpuo.com/sports" style="color:${C.brandDark};">configurator</a>.
+          </p>
+        </td></tr>
+        <tr><td style="padding:0 32px 28px;">
+          <p style="margin:0 0 8px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.22em;color:${C.mist};">Your message</p>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.zebra};border-radius:10px;">
+            <tr><td style="padding:14px 18px;font-size:14px;line-height:1.6;color:${C.ink};white-space:pre-wrap;">${esc(message)}</td></tr>
+          </table>
+        </td></tr>
+        <tr><td style="background:${C.ground};padding:20px 32px;border-top:1px solid ${C.line};">
+          <p style="margin:0;font-size:12px;line-height:1.7;color:${C.faint};">
+            Elpuo &middot; Custom sports uniforms<br>
+            Reply to this email or write to <a href="mailto:${esc(contactEmail)}" style="color:${C.brandDark};text-decoration:none;">${esc(contactEmail)}</a>
+          </p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  const text = [
+    `Thanks${firstName ? `, ${firstName}` : ""}.`,
+    ``,
+    `We've got your message and a kit specialist will reply within one business day.`,
+    `For a specific kit, the fastest route to a price is the configurator: https://www.elpuo.com/sports`,
+    ``,
+    `Your message`,
+    message,
+    ``,
+    `Elpuo · Custom sports uniforms · ${contactEmail}`,
+  ].join("\n");
+
+  return { subject: "We've got your message — Elpuo", html, text };
+}

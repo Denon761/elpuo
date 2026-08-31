@@ -11,12 +11,12 @@ customer gets a firm quote back.
 - **Next.js 15** (App Router) + **React 19** + **TypeScript**
 - **Tailwind CSS v4** (config-less, tokens in `src/app/globals.css`)
 - **next/font** — Anton (display) + Space Grotesk (UI)
-- **nodemailer** for the quote email (SMTP)
-- **Dark / light mode** — CSS-variable palette in `globals.css`, `data-theme` on
-  `<html>`, toggled from the header (`ThemeToggle`), persisted to `localStorage`
-  (`elpuo.theme`), defaults to system preference with a no-flash inline script in
-  `layout.tsx`. `.on-paper` / `.on-dark` pin a fixed palette for sections that
-  must stay light (editorial bands) or dark (product preview stages).
+- **nodemailer** for the quote and contact emails (SMTP), shared via
+  `src/lib/mailer.ts`
+- **Single light theme** — white ground, black headings, orange primary.
+  CSS-variable palette in `src/app/globals.css`; `.on-paper` / `.on-dark` pin a
+  fixed palette for sections that must stay light (editorial bands) or dark
+  (product preview stages).
 - Primary colour is **orange** (`--color-lime` / `--color-volt` in `globals.css`).
   Logo: `public/logo.png`.
 - No database. Catalogue is typed data in `src/lib/catalog.ts`.
@@ -25,25 +25,19 @@ customer gets a firm quote back.
 
 1. Copy `.env.example` to `.env.local` (already git-ignored) — or edit the
    `.env.local` that's already there.
-2. Fill in your SMTP details and the destination inbox:
+2. Fill in the SMTP + site values (see `.env.example` for the full list and
+   comments): `SMTP_HOST/PORT/SECURE/USER/PASS`, `QUOTE_FROM_EMAIL`,
+   `QUOTE_TO_EMAIL`, `NEXT_PUBLIC_CONTACT_EMAIL`, `NEXT_PUBLIC_SITE_URL`.
 
-   ```
-   SMTP_HOST=smtp.yourprovider.com
-   SMTP_PORT=587
-   SMTP_SECURE=false          # true only for port 465
-   SMTP_USER=...
-   SMTP_PASS=...
-   QUOTE_FROM_EMAIL="Elpuo Website <no-reply@yourdomain.com>"
-   QUOTE_TO_EMAIL=sales@yourdomain.com
-   NEXT_PUBLIC_CONTACT_EMAIL=sales@yourdomain.com
-   ```
-
-3. Restart `npm run dev`. Until this is set, the form returns a friendly
+3. Restart `npm run dev`. Until SMTP is set, both forms return a friendly
    "mailbox isn't configured yet" message instead of sending.
 
-The send happens in `src/app/api/quote/route.ts` (Node runtime). It accepts
-`multipart/form-data`, attaches the uploaded reference file (≤ 8 MB) and mails a
-formatted summary to `QUOTE_TO_EMAIL` with `replyTo` set to the customer.
+Both `src/app/api/quote/route.ts` and `src/app/api/contact/route.ts` (Node
+runtime) share the transport in `src/lib/mailer.ts`. They mail a formatted
+summary to `QUOTE_TO_EMAIL` with `replyTo` set to the sender, send a branded
+auto-reply to the sender, and drop bot submissions via a honeypot + time-trap
++ per-IP rate limit. The quote route also attaches the uploaded reference file
+(≤ 8 MB).
 
 ## Run
 
@@ -61,29 +55,30 @@ the two leaves a stale cache that 500s.
 
 | Path | Purpose |
 | --- | --- |
-| `src/lib/catalog.ts` | The 10 sports + the option groups shown in the form (`groupsFor`) |
+| `src/lib/catalog.ts` | The 10 sports (copy, SEO fields, FAQs) + the option groups shown in the form (`groupsFor`) |
+| `src/lib/site.ts` | Canonical domain, brand identity, production facts (single source) |
+| `src/lib/mailer.ts` | Shared SMTP transport + spam defence (honeypot / time-trap / rate limit) |
 | `src/components/product/ProductGallery.tsx` | 3–4 product views. Uses `sport.images` if set, else renders jersey views |
 | `src/components/product/QuoteForm.tsx` | The 3-section quote form (kit → reference upload → details) |
-| `src/app/api/quote/route.ts` | nodemailer send |
+| `src/app/api/quote/route.ts` | Quote email (nodemailer) + customer confirmation |
+| `src/app/api/contact/route.ts` | Contact form email + auto-reply |
 | `src/components/jersey/JerseyPreview.tsx` | Pure-SVG jersey used as the gallery fallback |
 | `src/app/sports/[sport]/` | Product page (statically generated per sport) |
 | `src/app/policies/` | Artwork, sizing, shipping, returns, terms, privacy |
 
 ## Adding real product photos
 
-Drop files in `public/products/` and list them per sport in `src/lib/catalog.ts`:
-
-```ts
-{ slug: "soccer", /* … */ images: ["/products/soccer-1.jpg", "/products/soccer-2.jpg"] }
-```
-
-The gallery switches from rendered jerseys to your photos automatically.
+Drop files in `public/products/` and list them per sport in `src/lib/catalog.ts`
+via `pics(slug)` (or an explicit `{ src, label }[]`). The gallery switches from
+rendered jerseys to your photos automatically. All 10 sports already have photos.
 
 ## Before launch
 
-- Set the SMTP env vars (above).
-- Wire the contact form (`src/app/contact/ContactForm.tsx`) — it's still a
-  front-end demo.
-- Replace placeholder contact details and the `metadataBase` URL in
-  `src/app/layout.tsx`, `sitemap.ts`, `robots.ts`.
+- Set the SMTP env vars in the production environment (Vercel → Settings → Env).
+- Set `NEXT_PUBLIC_SITE_URL` to the permanent domain (drives canonicals,
+  sitemap, robots, structured data).
+- Add real social profile URLs to `ORG.sameAs` in `src/lib/site.ts` when they
+  exist (empty by design until then).
+- Verify the domain in Google Search Console + Bing Webmaster Tools and submit
+  `…/sitemap.xml`.
 - Have the policy pages reviewed by counsel — they are plain-language drafts.

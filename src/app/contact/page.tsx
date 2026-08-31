@@ -62,8 +62,12 @@ export default function ContactPage() {
               </div>
             ))}
             <p className="px-1 pt-2 text-xs text-paper/60">
-              This form is a demo — it doesn&apos;t send email yet. Wire it to your
-              provider before launch.
+              We reply to every message within one business day. Prefer a price
+              first? The{" "}
+              <a href="/sports" className="link-underline text-volt">
+                configurator
+              </a>{" "}
+              is the quickest route.
             </p>
           </div>
 

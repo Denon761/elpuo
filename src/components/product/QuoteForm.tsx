@@ -68,6 +68,8 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
   const [errorMsg, setErrorMsg] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const fileInput = useRef<HTMLInputElement>(null);
+  const honeypot = useRef("");
+  const renderedAt = useRef(Date.now());
 
   const { startUpload, isUploading } = useUploadThing("quoteReference", {
     onClientUploadComplete: (res) => {
@@ -183,6 +185,8 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
     if (!validate()) return;
 
     const fd = new FormData();
+    fd.set("company", honeypot.current);
+    fd.set("t", String(renderedAt.current));
     fd.set("sport", sport.slug);
     fd.set("fabric", String(selections.fabric ?? ""));
     fd.set("method", String(selections.method ?? ""));
@@ -238,6 +242,20 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
 
   return (
     <form onSubmit={onSubmit} className="space-y-10">
+      {/* honeypot — hidden from users, catches bots */}
+      <div aria-hidden className="absolute h-0 w-0 overflow-hidden opacity-0">
+        <label htmlFor="qf-company">Company (leave blank)</label>
+        <input
+          id="qf-company"
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+          onChange={(e) => {
+            honeypot.current = e.target.value;
+          }}
+        />
+      </div>
+
       {/* 1 — KIT */}
       <section>
         <Legend n="1" title="Your kit" />

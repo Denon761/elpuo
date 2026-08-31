@@ -145,9 +145,8 @@ export function ProductGallery({ sport }: { sport: Sport }) {
       </div>
 
       <p className="mt-3 text-xs text-paper/60">
-        These are rendered previews. Swap in real photos via{" "}
-        <code className="text-paper/60">sport.images</code> in{" "}
-        <code className="text-paper/60">src/lib/catalog.ts</code>.
+        Illustrative renders — your kit is produced from the design you upload and
+        approve on the digital proof.
       </p>
     </div>
   );

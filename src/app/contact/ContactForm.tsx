@@ -1,11 +1,15 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
+
+type Status = "idle" | "sending" | "sent" | "error";
 
 export function ContactForm() {
-  const [sent, setSent] = useState(false);
+  const [status, setStatus] = useState<Status>("idle");
   const [form, setForm] = useState({ name: "", email: "", org: "", message: "" });
   const [error, setError] = useState("");
+  const honeypot = useRef("");
+  const renderedAt = useRef(Date.now());
   const uid = useId();
   const fid = (k: string) => `${uid}-${k}`;
 
@@ -13,16 +17,14 @@ export function ContactForm() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => setForm((p) => ({ ...p, [k]: e.target.value }));
 
-  if (sent) {
+  if (status === "sent") {
     return (
-      <div
-        className="rounded-lg border border-volt/40 bg-volt/10 p-8"
-        role="status"
-      >
-        <h3 className="display-3 text-2xl text-volt">Message queued</h3>
+      <div className="rounded-lg border border-volt/40 bg-volt/10 p-8" role="status">
+        <h3 className="display-3 text-2xl text-volt">Message sent</h3>
         <p className="mt-2 text-sm text-paper/70">
           Thanks {form.name.split(" ")[0] || "there"} — we&apos;ll reply to{" "}
-          {form.email} within one business day. For live kit configuration, the{" "}
+          {form.email} within one business day, and a confirmation is on its way to
+          your inbox. For live kit configuration, the{" "}
           <a href="/sports" className="link-underline text-volt">
             builder
           </a>{" "}
@@ -35,29 +37,69 @@ export function ContactForm() {
   const invalid = {
     name: !!error && !form.name.trim(),
     email: !!error && !/.+@.+\..+/.test(form.email),
-    message: !!error && !form.message.trim(),
+    message: !!error && form.message.trim().length < 10,
   };
 
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (status === "sending") return;
+
+    if (
+      !form.name.trim() ||
+      !/.+@.+\..+/.test(form.email) ||
+      form.message.trim().length < 10
+    ) {
+      setError("Add your name, a valid email and a message (at least a sentence).");
+      const firstBad = !form.name.trim()
+        ? "name"
+        : !/.+@.+\..+/.test(form.email)
+          ? "email"
+          : "message";
+      document.getElementById(fid(firstBad))?.focus();
+      return;
+    }
+
+    setError("");
+    setStatus("sending");
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...form,
+          company: honeypot.current,
+          t: renderedAt.current,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.ok) {
+        setStatus("sent");
+      } else {
+        setStatus("error");
+        setError(data.error || "Something went wrong. Please try again.");
+      }
+    } catch {
+      setStatus("error");
+      setError("Network error — please check your connection and retry.");
+    }
+  }
+
   return (
-    <form
-      className="space-y-4"
-      noValidate
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (!form.name.trim() || !/.+@.+\..+/.test(form.email) || !form.message.trim()) {
-          setError("Add your name, a valid email and a message.");
-          const firstBad = !form.name.trim()
-            ? "name"
-            : !/.+@.+\..+/.test(form.email)
-              ? "email"
-              : "message";
-          document.getElementById(fid(firstBad))?.focus();
-          return;
-        }
-        setError("");
-        setSent(true);
-      }}
-    >
+    <form className="space-y-4" noValidate onSubmit={onSubmit}>
+      {/* honeypot — visually hidden, off-screen, not announced */}
+      <div aria-hidden className="absolute h-0 w-0 overflow-hidden opacity-0">
+        <label htmlFor={fid("company")}>Company (leave blank)</label>
+        <input
+          id={fid("company")}
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+          onChange={(e) => {
+            honeypot.current = e.target.value;
+          }}
+        />
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor={fid("name")} className="field-label">
@@ -124,9 +166,10 @@ export function ContactForm() {
       </p>
       <button
         type="submit"
-        className="rounded-[8px] bg-lime px-6 py-3.5 text-[0.74rem] font-semibold uppercase tracking-[0.12em] text-volt-ink transition-opacity hover:opacity-90"
+        disabled={status === "sending"}
+        className="rounded-[8px] bg-lime px-6 py-3.5 text-[0.74rem] font-semibold uppercase tracking-[0.12em] text-volt-ink transition-opacity hover:opacity-90 disabled:opacity-50"
       >
-        Send message
+        {status === "sending" ? "Sending…" : "Send message"}
       </button>
     </form>
   );

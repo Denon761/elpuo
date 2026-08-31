@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import nodemailer from "nodemailer";
 import { DESIGN_METHOD, EXTRAS, FABRIC, KIT, MIN_ORDER_QTY, TECHNIQUE, getSport } from "@/lib/catalog";
 import { customerConfirmationEmail } from "@/lib/emails";
 import { quoteRef } from "@/lib/format";
+import { clientIp, getMailer, looksLikeSpam, MailNotConfiguredError, rateLimit } from "@/lib/mailer";
 
 export const runtime = "nodejs";
 
@@ -42,6 +42,27 @@ export async function POST(req: Request) {
   const email = str("email");
   const sport = getSport(sportSlug);
 
+  // Spam defence — honeypot + time-trap + link flooding. Bots get a fake
+  // success (with a throwaway reference) so they don't probe further.
+  const renderedAt = Number(str("t")) || 0;
+  if (
+    looksLikeSpam({
+      honeypot: str("company"),
+      elapsedMs: renderedAt ? Date.now() - renderedAt : undefined,
+      text: `${str("designNotes")} ${str("roster")}`,
+    })
+  ) {
+    return NextResponse.json({ ok: true, ref: quoteRef() });
+  }
+
+  const limit = rateLimit(`quote:${clientIp(req)}`);
+  if (!limit.ok) {
+    return NextResponse.json(
+      { ok: false, error: "Too many requests. Please try again in a few minutes." },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfterSec) } }
+    );
+  }
+
   if (!sport || !contactName || !email) {
     return NextResponse.json(
       { ok: false, error: "Please fill in your name, email and pick a sport." },
@@ -52,22 +73,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "That email address looks invalid." }, { status: 422 });
   }
 
-  const {
-    SMTP_HOST,
-    SMTP_PORT,
-    SMTP_SECURE,
-    SMTP_USER,
-    SMTP_PASS,
-    QUOTE_TO_EMAIL,
-    QUOTE_FROM_EMAIL,
-  } = process.env;
-
-  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS || !QUOTE_TO_EMAIL) {
-    console.error("[quote] SMTP env vars are not set — see .env.local");
-    return NextResponse.json(
-      { ok: false, error: "The quote mailbox isn't configured yet. Please email us directly." },
-      { status: 500 }
-    );
+  let mailer;
+  try {
+    mailer = getMailer();
+  } catch (err) {
+    if (err instanceof MailNotConfiguredError) {
+      console.error("[quote] SMTP env vars are not set — see .env.example");
+      return NextResponse.json(
+        { ok: false, error: "The quote mailbox isn't configured yet. Please email us directly." },
+        { status: 500 }
+      );
+    }
+    throw err;
   }
 
   // Optional reference design — uploaded to UploadThing by the client, which
@@ -170,15 +187,7 @@ export async function POST(req: Request) {
       }
     </div>`;
 
-  const transporter = nodemailer.createTransport({
-    host: SMTP_HOST,
-    port: Number(SMTP_PORT) || 587,
-    secure: String(SMTP_SECURE).toLowerCase() === "true",
-    auth: { user: SMTP_USER, pass: SMTP_PASS },
-  });
-
-  const fromAddress = QUOTE_FROM_EMAIL || SMTP_USER;
-  const studioAddresses = QUOTE_TO_EMAIL.split(",").map((s) => s.trim());
+  const { transporter, from: fromAddress, studioAddresses } = mailer;
 
   // 1 — studio notification (must succeed)
   try {
