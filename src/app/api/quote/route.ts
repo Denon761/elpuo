@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 import { DESIGN_METHOD, EXTRAS, FABRIC, KIT, MIN_ORDER_QTY, TECHNIQUE, getSport } from "@/lib/catalog";
+import { customerConfirmationEmail } from "@/lib/emails";
 import { quoteRef } from "@/lib/format";
 
 export const runtime = "nodejs";
@@ -175,10 +176,14 @@ export async function POST(req: Request) {
     auth: { user: SMTP_USER, pass: SMTP_PASS },
   });
 
+  const fromAddress = QUOTE_FROM_EMAIL || SMTP_USER;
+  const studioAddresses = QUOTE_TO_EMAIL.split(",").map((s) => s.trim());
+
+  // 1 — studio notification (must succeed)
   try {
     await transporter.sendMail({
-      from: QUOTE_FROM_EMAIL || SMTP_USER,
-      to: QUOTE_TO_EMAIL.split(",").map((s) => s.trim()),
+      from: fromAddress,
+      to: studioAddresses,
       replyTo: `${contactName} <${email}>`,
       subject: `Quote request ${ref} — ${sport.name} (${contactName})`,
       text,
@@ -191,6 +196,38 @@ export async function POST(req: Request) {
       { ok: false, error: "We couldn't send your request. Please email us directly." },
       { status: 502 }
     );
+  }
+
+  // 2 — branded confirmation to the customer (best effort — never fails the request)
+  try {
+    const confirmation = customerConfirmationEmail({
+      firstName: contactName.split(" ")[0] || "",
+      sportName: sport.name,
+      ref,
+      email,
+      contactEmail: studioAddresses[0] || fromAddress,
+      summary: [
+        ["Sport", sport.name],
+        ["Fabric", optionLabel("fabric", str("fabric"))],
+        ["Decoration", optionLabel("method", str("method"))],
+        ["Kit pieces", optionLabel("kit", str("kit"))],
+        ["Names & numbers", optionLabel("technique", str("technique"))],
+        ["Add-ons", extrasLabels(extras)],
+        ["Total quantity", String(totalQty)],
+        ["Sizes", sizeLine],
+        ["Reference design", referenceUrl ? "Uploaded" : "None"],
+      ],
+    });
+    await transporter.sendMail({
+      from: fromAddress,
+      to: email,
+      replyTo: studioAddresses[0] || fromAddress,
+      subject: confirmation.subject,
+      text: confirmation.text,
+      html: confirmation.html,
+    });
+  } catch (err) {
+    console.error("[quote] customer confirmation email failed:", err);
   }
 
   return NextResponse.json({ ok: true, ref });
