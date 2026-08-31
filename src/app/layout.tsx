@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
 import { Anton, Space_Grotesk } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { JsonLd } from "@/components/site/JsonLd";
 import { abs, ORG, SITE_URL } from "@/lib/site";
+
+/** Google tag (Ads / gtag.js). Override with NEXT_PUBLIC_GTAG_ID if it changes. */
+const GTAG_ID = process.env.NEXT_PUBLIC_GTAG_ID || "AW-18416026404";
 
 const anton = Anton({
   weight: "400",
@@ -104,6 +108,20 @@ export default function RootLayout({
         <Header />
         <main id="main-content">{children}</main>
         <Footer />
+
+        {/* Google tag (gtag.js) */}
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${GTAG_ID}`}
+          strategy="afterInteractive"
+        />
+        <Script id="gtag-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${GTAG_ID}');
+          `}
+        </Script>
       </body>
     </html>
   );
