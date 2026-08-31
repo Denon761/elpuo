@@ -1,12 +1,11 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 import { MIN_ORDER_QTY, SIZES } from "@/lib/catalog";
 import { useUploadThing } from "@/lib/uploadthing";
 import type { OptionGroup, Sport } from "@/lib/types";
 
-const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL || "sales@example.com";
 const MAX_FILE_MB = 8;
 
 type Status = "idle" | "sending" | "sent" | "error";
@@ -36,6 +35,7 @@ function initSelections(groups: OptionGroup[]) {
 }
 
 export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup[] }) {
+  const router = useRouter();
   const [selections, setSelections] = useState(() => initSelections(groups));
   const [sizes, setSizes] = useState<Record<string, number>>({});
   const [players, setPlayers] = useState<Player[]>([]);
@@ -55,7 +55,6 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
 
   const [status, setStatus] = useState<Status>("idle");
   const [errorMsg, setErrorMsg] = useState("");
-  const [ref, setRef] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const fileInput = useRef<HTMLInputElement>(null);
 
@@ -183,9 +182,10 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
       const res = await fetch("/api/quote", { method: "POST", body: fd });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.ok) {
-        setRef(data.ref || "");
         setStatus("sent");
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        const params = new URLSearchParams({ sport: sport.slug });
+        if (data.ref) params.set("ref", data.ref);
+        router.push(`/thank-you?${params.toString()}`);
       } else {
         setStatus("error");
         setErrorMsg(data.error || "Something went wrong. Please try again.");
@@ -200,27 +200,10 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
     return (
       <div className="rounded-lg border border-volt/50 bg-volt/10 p-8">
         <p className="kicker text-volt">Request received</p>
-        <h2 className="display-3 mt-3 text-2xl">Thanks, {c.contactName.split(" ")[0] || "there"}.</h2>
-        <p className="mt-3 text-paper/70">
-          Your {sport.name.toLowerCase()} kit request is with our studio
-          {ref ? <> under reference <strong className="text-paper">{ref}</strong></> : null}. A
-          specialist will review it and reply to{" "}
-          <strong className="text-paper">{c.email}</strong> within one business day with a
-          firm quote and a proof.
-        </p>
-        <p className="mt-4 text-sm text-paper/50">
-          Nothing has been charged. Questions? Email{" "}
-          <a href={`mailto:${CONTACT_EMAIL}`} className="text-volt link-underline">
-            {CONTACT_EMAIL}
-          </a>
-          .
-        </p>
-        <Link
-          href="/sports"
-          className="mt-6 inline-flex rounded-[8px] bg-lime px-5 py-3 text-[0.72rem] font-semibold uppercase tracking-[0.12em] text-volt-ink"
-        >
-          Request another kit
-        </Link>
+        <h2 className="display-3 mt-3 text-2xl">
+          Thanks, {c.contactName.split(" ")[0] || "there"}.
+        </h2>
+        <p className="mt-3 text-paper/70">Taking you to your confirmation…</p>
       </div>
     );
   }
