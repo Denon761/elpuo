@@ -25,16 +25,13 @@ export const ORG = {
   description:
     "Custom sublimated sports uniforms for clubs, schools and academies across ten sports, made on an in-house print floor.",
   logo: abs("/logo.png"),
-  email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "studio@elpuo.example",
-  teamsEmail: "teams@elpuo.example",
-  phone: process.env.NEXT_PUBLIC_CONTACT_PHONE || "+1-000-000-0000",
-  /** Public profiles / external references — feeds schema `sameAs`. */
-  sameAs: [
-    "https://www.instagram.com/elpuo",
-    "https://www.facebook.com/elpuo",
-    "https://www.linkedin.com/company/elpuo",
-    "https://www.youtube.com/@elpuo",
-  ],
+  /** The single business inbox — quotes, artwork, club programmes, policy. */
+  email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "info@elpuo.com",
+  /**
+   * Public profiles / external references — feeds schema `sameAs`. Empty
+   * until real profiles exist; add the exact URLs here when they do.
+   */
+  sameAs: [] as string[],
 } as const;
 
 /**

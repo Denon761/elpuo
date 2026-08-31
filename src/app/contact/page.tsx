@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Reveal } from "@/components/site/Reveal";
+import { ORG } from "@/lib/site";
 import { ContactForm } from "./ContactForm";
 
 export const metadata: Metadata = {
@@ -10,9 +11,11 @@ export const metadata: Metadata = {
 };
 
 const CHANNELS = [
-  { k: "Studio", v: "studio@elpuo.example", note: "Quotes, artwork, proofs" },
-  { k: "Club programmes", v: "teams@elpuo.example", note: "Multi-sport & season deals" },
-  { k: "Phone", v: "+1 (000) 000-0000", note: "Mon–Fri, 9:00–17:00" },
+  {
+    k: "Email",
+    v: ORG.email,
+    note: "Quotes, artwork and proofs, club and season programmes, sizing kits",
+  },
 ];
 
 export default function ContactPage() {
@@ -49,7 +52,12 @@ export default function ContactPage() {
                 className="rounded-md border border-line bg-ink-2 p-6"
               >
                 <p className="kicker text-paper/60">{c.k}</p>
-                <p className="mt-2 font-display text-2xl text-paper">{c.v}</p>
+                <a
+                  href={`mailto:${c.v}`}
+                  className="link-underline mt-2 block font-display text-2xl text-paper"
+                >
+                  {c.v}
+                </a>
                 <p className="mt-1 text-xs text-paper/60">{c.note}</p>
               </div>
             ))}

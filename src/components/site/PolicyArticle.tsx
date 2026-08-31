@@ -1,3 +1,4 @@
+import { ORG } from "@/lib/site";
 import { Reveal } from "./Reveal";
 
 export interface PolicySection {
@@ -37,9 +38,12 @@ export function PolicyArticle({ title, updated, intro, sections }: PolicyArticle
 
       <p className="mt-14 border-t border-line pt-6 text-sm text-paper/60">
         Questions about this policy? Email{" "}
-        <span className="text-paper/70">studio@elpuo.example</span>. This document
-        is a plain-language summary of how we operate and is not legal advice —
-        review it with your own counsel before relying on it commercially.
+        <a href={`mailto:${ORG.email}`} className="link-underline text-paper/70">
+          {ORG.email}
+        </a>
+        . This document is a plain-language summary of how we operate and is not
+        legal advice — review it with your own counsel before relying on it
+        commercially.
       </p>
     </article>
   );

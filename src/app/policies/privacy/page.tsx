@@ -49,7 +49,7 @@ export default function Page() {
         {
           h: "Your rights",
           body: [
-            "Depending on where you live, you may have the right to access, correct, export or delete your personal data, and to object to certain processing. To exercise any of these, email studio@elpuo.example from the address on file.",
+            "Depending on where you live, you may have the right to access, correct, export or delete your personal data, and to object to certain processing. To exercise any of these, email info@elpuo.com from the address on file.",
           ],
         },
         {
@@ -61,7 +61,7 @@ export default function Page() {
         {
           h: "Contact",
           body: [
-            "Questions or complaints about privacy can be sent to studio@elpuo.example. If you're in a region with a data protection authority, you also have the right to lodge a complaint with it.",
+            "Questions or complaints about privacy can be sent to info@elpuo.com. If you're in a region with a data protection authority, you also have the right to lodge a complaint with it.",
           ],
         },
       ]}

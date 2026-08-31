@@ -41,7 +41,7 @@ export default function Page() {
         {
           h: "How to start a claim",
           body: [
-            "Email studio@elpuo.example with your quotation reference, a description of the problem and clear photos. We aim to respond within two business days with a resolution — remake, partial credit, or replacement of affected units.",
+            "Email info@elpuo.com with your quotation reference, a description of the problem and clear photos. We aim to respond within two business days with a resolution — remake, partial credit, or replacement of affected units.",
           ],
         },
       ]}

@@ -69,13 +69,12 @@ const orgSchema = {
   url: SITE_URL,
   logo: ORG.logo,
   description: ORG.description,
-  sameAs: ORG.sameAs,
+  ...(ORG.sameAs.length ? { sameAs: ORG.sameAs } : {}),
   contactPoint: [
     {
       "@type": "ContactPoint",
       contactType: "sales",
       email: ORG.email,
-      telephone: ORG.phone,
       areaServed: "Worldwide",
       availableLanguage: ["en"],
     },

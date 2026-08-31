@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ButtonLink } from "@/components/ui/Button";
 import { getSport } from "@/lib/catalog";
+import { ORG } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Thank you — request received",
@@ -8,7 +9,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL || "sales@example.com";
+const CONTACT_EMAIL = ORG.email;
 
 export default async function ThankYouPage({
   searchParams,
