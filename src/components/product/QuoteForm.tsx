@@ -8,6 +8,9 @@ import type { OptionGroup, Sport } from "@/lib/types";
 
 const MAX_FILE_MB = 8;
 
+const fieldCls = (err?: string) =>
+  `field ${err ? "!border-ember !bg-ember/5" : ""}`;
+
 type Status = "idle" | "sending" | "sent" | "error";
 
 interface Player {
@@ -449,25 +452,81 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
       {/* 3 — DETAILS */}
       <section>
         <Legend n="3" title="Your details" />
-        <div className="mt-5 grid gap-4 sm:grid-cols-2">
-          <Field label="Club / organisation">
-            <input className="field" value={c.organization} onChange={setC1("organization")} />
-          </Field>
-          <Field label="Your name *" error={fieldErrors.contactName}>
-            <input className="field" value={c.contactName} onChange={setC1("contactName")} />
-          </Field>
-          <Field label="Email *" error={fieldErrors.email}>
-            <input type="email" className="field" value={c.email} onChange={setC1("email")} />
-          </Field>
-          <Field label="Phone">
-            <input className="field" value={c.phone} onChange={setC1("phone")} />
-          </Field>
-          <Field label="Country *" error={fieldErrors.country}>
-            <input className="field" value={c.country} onChange={setC1("country")} />
-          </Field>
-          <Field label="City">
-            <input className="field" value={c.city} onChange={setC1("city")} />
-          </Field>
+        <p className="mt-3 text-sm text-paper/55">
+          So we can send your quote and proof back to you. We never share these or
+          add you to a mailing list.
+        </p>
+
+        <div className="mt-5 rounded-lg border border-line-strong bg-ink-2 p-5 sm:p-6">
+          <div className="grid gap-x-4 gap-y-5 sm:grid-cols-2">
+            <Field label="Your name" required error={fieldErrors.contactName}>
+              <input
+                className={fieldCls(fieldErrors.contactName)}
+                placeholder="Alex Morgan"
+                autoComplete="name"
+                value={c.contactName}
+                onChange={setC1("contactName")}
+              />
+            </Field>
+            <Field
+              label="Email"
+              required
+              hint="Where your quote and digital proof will land"
+              error={fieldErrors.email}
+            >
+              <input
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                className={fieldCls(fieldErrors.email)}
+                placeholder="you@yourclub.com"
+                value={c.email}
+                onChange={setC1("email")}
+              />
+            </Field>
+            <Field
+              label="Country"
+              required
+              hint="Sets your shipping options and lead time"
+              error={fieldErrors.country}
+            >
+              <input
+                className={fieldCls(fieldErrors.country)}
+                placeholder="United Kingdom"
+                autoComplete="country-name"
+                value={c.country}
+                onChange={setC1("country")}
+              />
+            </Field>
+            <Field label="Phone" hint="Only if you'd rather we call you">
+              <input
+                type="tel"
+                autoComplete="tel"
+                className={fieldCls()}
+                placeholder="+44 7700 900123"
+                value={c.phone}
+                onChange={setC1("phone")}
+              />
+            </Field>
+            <Field label="Club / organisation">
+              <input
+                className={fieldCls()}
+                placeholder="Riverside Hockey Club"
+                autoComplete="organization"
+                value={c.organization}
+                onChange={setC1("organization")}
+              />
+            </Field>
+            <Field label="City">
+              <input
+                className={fieldCls()}
+                placeholder="Manchester"
+                autoComplete="address-level2"
+                value={c.city}
+                onChange={setC1("city")}
+              />
+            </Field>
+          </div>
         </div>
       </section>
 
@@ -508,18 +567,34 @@ function Legend({ n, title }: { n: string; title: string }) {
 
 function Field({
   label,
+  required,
+  hint,
   error,
   children,
 }: {
   label: string;
+  required?: boolean;
+  hint?: string;
   error?: string;
   children: React.ReactNode;
 }) {
   return (
     <div>
-      <label className="field-label">{label}</label>
+      <label className="mb-1.5 flex items-center gap-2">
+        <span className="text-[0.82rem] font-semibold text-paper">{label}</span>
+        {required ? (
+          <span className="rounded-full bg-volt/15 px-1.5 py-0.5 text-[0.58rem] font-bold uppercase tracking-[0.1em] text-volt">
+            Required
+          </span>
+        ) : (
+          <span className="text-[0.58rem] font-semibold uppercase tracking-[0.12em] text-paper/30">
+            Optional
+          </span>
+        )}
+      </label>
       {children}
-      {error && <p className="mt-1 text-xs text-ember">{error}</p>}
+      {hint && !error && <p className="mt-1.5 text-xs text-paper/45">{hint}</p>}
+      {error && <p className="mt-1.5 text-xs font-medium text-ember">{error}</p>}
     </div>
   );
 }
