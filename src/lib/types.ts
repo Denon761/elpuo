@@ -3,7 +3,8 @@ export type Silhouette = "tee" | "tank" | "polo" | "longsleeve";
 export interface Option {
   id: string;
   label: string;
-  /** Legacy per-unit price hint — not used for live pricing any more. */
+  /** Per-unit price delta added on top of the sport's base price — used for
+   *  live pricing on small (buy-now) orders. See src/lib/pricing.ts. */
   delta: number;
   desc?: string;
   recommended?: boolean;

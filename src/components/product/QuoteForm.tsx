@@ -11,10 +11,20 @@ import {
   type ReactElement,
 } from "react";
 import { MIN_ORDER_QTY, SIZES } from "@/lib/catalog";
+import { usd } from "@/lib/format";
+import { BULK_THRESHOLD, priceForQty } from "@/lib/pricing";
+import { FACTS, QUOTE_TRUST_LINE } from "@/lib/site";
 import { useUploadThing } from "@/lib/uploadthing";
 import type { OptionGroup, Sport } from "@/lib/types";
 
 const MAX_FILE_MB = 8;
+
+const QTY_CHIPS = [
+  { label: "1–10", value: 5 },
+  { label: "11–20", value: 15 },
+  { label: "21–29", value: 25 },
+  { label: `${BULK_THRESHOLD}+`, value: BULK_THRESHOLD },
+];
 
 const fieldCls = (err?: string) =>
   `field ${err ? "!border-ember !bg-ember/5" : ""}`;
@@ -45,11 +55,33 @@ function initSelections(groups: OptionGroup[]) {
   return s;
 }
 
+/** The recommended pick for a group, as shown in copy and used by the
+ *  "not sure" reset action. */
+function recommendedId(g: OptionGroup): string | string[] {
+  if (g.type === "multi") return Array.isArray(g.defaultValue) ? g.defaultValue : [];
+  return g.options.find((o) => o.recommended)?.id ?? (g.defaultValue as string);
+}
+
+function recommendedLabel(g: OptionGroup): string {
+  const id = recommendedId(g);
+  if (Array.isArray(id)) {
+    return g.options
+      .filter((o) => id.includes(o.id))
+      .map((o) => o.label)
+      .join(", ");
+  }
+  return g.options.find((o) => o.id === id)?.label ?? "";
+}
+
 export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup[] }) {
   const router = useRouter();
   const [selections, setSelections] = useState(() => initSelections(groups));
+  const [customizeOpen, setCustomizeOpen] = useState(false);
+  const [qty, setQty] = useState<number>(MIN_ORDER_QTY);
   const [sizes, setSizes] = useState<Record<string, number>>({});
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [players, setPlayers] = useState<Player[]>([]);
+  const [needsDesignHelp, setNeedsDesignHelp] = useState(false);
   const [designNotes, setDesignNotes] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
@@ -91,9 +123,16 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
     },
   });
 
-  const totalQty = useMemo(
+  const mode: "buy" | "quote" = qty < BULK_THRESHOLD ? "buy" : "quote";
+
+  const sizesTotal = useMemo(
     () => Object.values(sizes).reduce((a, b) => a + (Number(b) || 0), 0),
     [sizes]
+  );
+
+  const quote = useMemo(
+    () => priceForQty(sport, selections, Math.max(qty, 1)),
+    [sport, selections, qty]
   );
 
   function setSingle(groupId: string, value: string) {
@@ -148,13 +187,13 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
 
   function validate() {
     const e: Record<string, string> = {};
+    if (qty < MIN_ORDER_QTY) e.qty = `Minimum order is ${MIN_ORDER_QTY} units`;
     if (!c.contactName.trim()) e.contactName = "Required";
     if (!c.email.trim()) e.email = "Required";
     else if (!/.+@.+\..+/.test(c.email)) e.email = "Enter a valid email";
+    if (!c.phone.trim()) e.phone = "Required";
     if (!c.country.trim()) e.country = "Required";
-    if (totalQty < MIN_ORDER_QTY)
-      e.sizes = `Minimum order is ${MIN_ORDER_QTY} units`;
-    if (file && !referenceUrl)
+    if (!needsDesignHelp && file && !referenceUrl)
       e.file = isUploading
         ? "Wait for the upload to finish"
         : "Re-select your reference file — it didn't upload";
@@ -163,15 +202,11 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
     // Move focus to the first field in error so screen-reader and keyboard
     // users are taken straight to what needs fixing.
     const firstError =
-      (["contactName", "email", "country"] as const).find((k) => e[k]) ??
-      (e.sizes ? "sizes" : e.file ? "file" : undefined);
+      (["qty", "contactName", "email", "phone", "country"] as const).find((k) => e[k]) ??
+      (e.file ? "file" : undefined);
     if (firstError) {
       const el =
-        firstError === "sizes"
-          ? document.getElementById("qf-sizes-first")
-          : firstError === "file"
-            ? fileInput.current
-            : document.getElementById(`qf-${firstError}`);
+        firstError === "file" ? fileInput.current : document.getElementById(`qf-${firstError}`);
       el?.focus();
       el?.scrollIntoView({ block: "center", behavior: "smooth" });
     }
@@ -179,11 +214,7 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
     return Object.keys(e).length === 0;
   }
 
-  async function onSubmit(ev: React.FormEvent) {
-    ev.preventDefault();
-    if (status === "sending") return;
-    if (!validate()) return;
-
+  function buildFormData() {
     const fd = new FormData();
     fd.set("company", honeypot.current);
     fd.set("t", String(renderedAt.current));
@@ -193,9 +224,10 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
     fd.set("kit", String(selections.kit ?? ""));
     fd.set("technique", String(selections.technique ?? ""));
     for (const id of (selections.extras as string[]) ?? []) fd.append("extras", id);
+    fd.set("qty", String(qty));
     fd.set("sizes", JSON.stringify(sizes));
-    fd.set("totalQty", String(totalQty));
     fd.set("roster", serializeRoster(players));
+    fd.set("designHelp", needsDesignHelp ? "yes" : "");
     fd.set("designNotes", designNotes);
     fd.set("organization", c.organization);
     fd.set("contactName", c.contactName);
@@ -203,17 +235,32 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
     fd.set("phone", c.phone);
     fd.set("country", c.country);
     fd.set("city", c.city);
-    if (referenceUrl) {
+    if (!needsDesignHelp && referenceUrl) {
       fd.set("referenceUrl", referenceUrl);
       if (file) fd.set("referenceName", file.name);
     }
+    return fd;
+  }
 
+  async function onSubmit(ev: React.FormEvent) {
+    ev.preventDefault();
+    if (status === "sending") return;
+    if (!validate()) return;
+
+    const fd = buildFormData();
     setStatus("sending");
     setErrorMsg("");
     try {
-      const res = await fetch("/api/quote", { method: "POST", body: fd });
+      const res = await fetch(mode === "buy" ? "/api/checkout" : "/api/quote", {
+        method: "POST",
+        body: fd,
+      });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.ok) {
+        if (mode === "buy" && data.url) {
+          window.location.href = data.url;
+          return;
+        }
         setStatus("sent");
         const params = new URLSearchParams({ sport: sport.slug });
         if (data.ref) params.set("ref", data.ref);
@@ -240,6 +287,11 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
     );
   }
 
+  const recommendedSummary = groups
+    .map((g) => recommendedLabel(g))
+    .filter(Boolean)
+    .join(", ");
+
   return (
     <form onSubmit={onSubmit} className="space-y-10">
       {/* honeypot — hidden from users, catches bots */}
@@ -256,275 +308,82 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
         />
       </div>
 
-      {/* 1 — KIT */}
+      {/* 1 — QUANTITY */}
       <section>
-        <Legend n="1" title="Your kit" />
-        <div className="mt-5 space-y-5">
-          {groups.map((g) =>
-            g.type === "single" ? (
-              <div key={g.id}>
-                <p className="field-label" id={`grp-${g.id}`}>{g.label}</p>
-                <div
-                  className="flex flex-wrap gap-2"
-                  role="group"
-                  aria-labelledby={`grp-${g.id}`}
-                >
-                  {g.options.map((o) => {
-                    const on = selections[g.id] === o.id;
-                    return (
-                      <button
-                        key={o.id}
-                        type="button"
-                        onClick={() => setSingle(g.id, o.id)}
-                        aria-pressed={on}
-                        className={`rounded-[8px] border px-3.5 py-2 text-sm transition-colors ${
-                          on
-                            ? "border-volt bg-volt/10 text-paper"
-                            : "border-line text-paper/65 hover:border-line-strong"
-                        }`}
-                      >
-                        {o.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : (
-              <div key={g.id}>
-                <p className="field-label" id={`grp-${g.id}`}>{g.label}</p>
-                <div
-                  className="flex flex-wrap gap-2"
-                  role="group"
-                  aria-labelledby={`grp-${g.id}`}
-                >
-                  {g.options.map((o) => {
-                    const on = ((selections[g.id] as string[]) ?? []).includes(o.id);
-                    return (
-                      <button
-                        key={o.id}
-                        type="button"
-                        onClick={() => toggleMulti(g.id, o.id)}
-                        aria-pressed={on}
-                        className={`rounded-[8px] border px-3.5 py-2 text-sm transition-colors ${
-                          on
-                            ? "border-volt bg-volt/10 text-paper"
-                            : "border-line text-paper/65 hover:border-line-strong"
-                        }`}
-                      >
-                        {on ? "✓ " : "+ "}
-                        {o.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )
-          )}
+        <Legend n="1" title="How many do you need?" />
+        <div className="mt-5 rounded-lg border border-line-strong bg-ink-2 p-5 sm:p-6">
+          <p className="text-sm text-paper/55">
+            A rough headcount is enough to start — exact sizes are optional and
+            come later.
+          </p>
 
-          {/* size quantities */}
-          <div>
-            <div className="flex items-baseline justify-between">
-              <p className="field-label mb-0" id="grp-sizes">
-                Quantity by size{" "}
-                <span className="text-paper/55">(min. {MIN_ORDER_QTY})</span>
-              </p>
-              <p className="text-xs text-paper/60" aria-live="polite">
-                Total <span className="text-paper/80">{totalQty}</span>
-              </p>
-            </div>
-            <div
-              className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-5"
-              role="group"
-              aria-labelledby="grp-sizes"
-              aria-describedby={fieldErrors.sizes ? "err-sizes" : undefined}
-            >
-              {SIZES.map((s, i) => (
-                <label key={s} className="flex flex-col">
-                  <span className="text-center text-[0.65rem] uppercase tracking-wide text-paper/60">
-                    {s}
-                  </span>
-                  <input
-                    id={i === 0 ? "qf-sizes-first" : undefined}
-                    type="number"
-                    min={0}
-                    inputMode="numeric"
-                    aria-label={`Quantity, size ${s}`}
-                    aria-invalid={fieldErrors.sizes ? true : undefined}
-                    value={sizes[s] ?? ""}
-                    onChange={(e) =>
-                      setSizes((p) => ({ ...p, [s]: Math.max(0, Number(e.target.value) || 0) }))
-                    }
-                    placeholder="0"
-                    className="field !px-2 !py-1.5 text-center text-sm"
-                  />
-                </label>
-              ))}
-            </div>
-            {fieldErrors.sizes && (
-              <p id="err-sizes" role="alert" className="mt-1 text-xs font-medium text-ember">
-                {fieldErrors.sizes}
-              </p>
-            )}
-          </div>
-
-          {/* players */}
-          <div>
-            <div className="flex items-baseline justify-between">
-              <p className="field-label mb-0">
-                Player names &amp; numbers{" "}
-                <span className="text-paper/55">(optional)</span>
-              </p>
-              {players.length > 0 && (
-                <p className="text-xs text-paper/60">
-                  {players.length} player{players.length === 1 ? "" : "s"}
-                </p>
-              )}
-            </div>
-
-            {players.length > 0 && (
-              <ul className="mt-3 space-y-2">
-                {players.map((p, i) => (
-                  <li key={p.id} className="flex items-center gap-2">
-                    <span className="w-6 shrink-0 text-center text-xs font-semibold text-paper/60">
-                      {i + 1}
-                    </span>
-                    <input
-                      value={p.name}
-                      onChange={(e) => updatePlayer(p.id, { name: e.target.value })}
-                      placeholder="Name on back"
-                      aria-label={`Player ${i + 1} name`}
-                      className="field !py-2 min-w-0 flex-1 text-sm"
-                    />
-                    <input
-                      value={p.number}
-                      onChange={(e) =>
-                        updatePlayer(p.id, {
-                          number: e.target.value.replace(/[^0-9]/g, "").slice(0, 3),
-                        })
-                      }
-                      inputMode="numeric"
-                      placeholder="No."
-                      aria-label={`Player ${i + 1} number`}
-                      className="field !w-16 !py-2 shrink-0 text-center text-sm"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removePlayer(p.id)}
-                      aria-label={`Remove player ${i + 1}`}
-                      className="grid h-10 w-10 shrink-0 place-items-center rounded-[6px] border border-line text-paper/60 transition-colors hover:border-ember hover:text-ember"
-                    >
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <path d="M6 6l12 12M18 6L6 18" />
-                      </svg>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-
+          <div className="mt-4 flex items-center gap-3">
             <button
               type="button"
-              onClick={addPlayer}
-              className="mt-3 inline-flex items-center gap-2.5 rounded-[8px] border border-line-strong py-2 pl-2 pr-4 text-sm font-medium text-paper/80 transition-colors hover:border-volt hover:text-volt"
+              aria-label="Decrease quantity"
+              onClick={() => setQty((q) => Math.max(1, q - 1))}
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-[8px] border border-line-strong text-lg text-paper/70 transition-colors hover:border-volt hover:text-volt"
             >
-              <span className="grid h-6 w-6 place-items-center rounded-full bg-volt/15 text-[0.72rem] font-bold text-volt">
-                {players.length + 1}
-              </span>
-              Add {players.length === 0 ? "new" : "another"} player
+              −
             </button>
-          </div>
-        </div>
-      </section>
-
-      {/* 2 — REFERENCE */}
-      <section>
-        <Legend n="2" title="Reference design" />
-        <div className="mt-5 space-y-4">
-          <div>
-            <p className="field-label" id="grp-file">Upload the design you have in mind</p>
-            <label className="file-drop flex cursor-pointer items-center gap-4 rounded-md border border-dashed border-line-strong bg-ink-2 p-4 transition-colors hover:border-volt">
-              <input
-                ref={fileInput}
-                type="file"
-                accept="image/*,.pdf,.ai,.eps"
-                onChange={onFile}
-                aria-labelledby="grp-file"
-                aria-describedby="file-status"
-                aria-invalid={fieldErrors.file ? true : undefined}
-                className="sr-only"
-              />
-              {filePreview ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={filePreview}
-                  alt="Reference preview"
-                  className="h-16 w-16 rounded-sm object-cover"
-                />
-              ) : (
-                <span className="grid h-16 w-16 shrink-0 place-items-center rounded-sm border border-line text-paper/60">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M12 16V4m0 0 4 4m-4-4L8 8" />
-                    <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
-                  </svg>
-                </span>
-              )}
-              <span className="text-sm">
-                <span className="font-semibold text-paper">
-                  {file ? file.name : "Choose a file"}
-                </span>
-                <span
-                  id="file-status"
-                  className="mt-0.5 block text-xs text-paper/60"
-                  aria-live="polite"
-                >
-                  {isUploading
-                    ? "Uploading…"
-                    : referenceUrl
-                      ? "✓ Uploaded"
-                      : `PNG, JPG, PDF, AI or EPS · up to ${MAX_FILE_MB} MB`}
-                </span>
-                {referenceUrl && (
-                  <a
-                    href={referenceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="mt-0.5 block truncate text-xs text-volt link-underline"
-                  >
-                    {referenceUrl}
-                  </a>
-                )}
-                {fieldErrors.file && (
-                  <span role="alert" className="mt-0.5 block text-xs font-medium text-ember">
-                    {fieldErrors.file}
-                  </span>
-                )}
-              </span>
-            </label>
-          </div>
-
-          <div>
-            <label htmlFor="notes" className="field-label">
-              Design notes
-            </label>
-            <textarea
-              id="notes"
-              rows={4}
-              value={designNotes}
-              onChange={(e) => setDesignNotes(e.target.value)}
-              placeholder="Team colours (Pantone if you have them), sponsor placement, collar style, deadline, links to artwork…"
-              className="field resize-none"
+            <input
+              id="qf-qty"
+              type="number"
+              min={1}
+              inputMode="numeric"
+              aria-label="Exact quantity"
+              aria-invalid={fieldErrors.qty ? true : undefined}
+              aria-describedby={fieldErrors.qty ? "err-qty" : undefined}
+              value={qty}
+              onChange={(e) => setQty(Math.max(0, Number(e.target.value) || 0))}
+              className={`${fieldCls(fieldErrors.qty)} !w-24 text-center font-display text-xl`}
             />
+            <button
+              type="button"
+              aria-label="Increase quantity"
+              onClick={() => setQty((q) => q + 1)}
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-[8px] border border-line-strong text-lg text-paper/70 transition-colors hover:border-volt hover:text-volt"
+            >
+              +
+            </button>
+            <span className="text-sm text-paper/60">units total</span>
+          </div>
+
+          {fieldErrors.qty && (
+            <p id="err-qty" role="alert" className="mt-2 text-xs font-medium text-ember">
+              {fieldErrors.qty}
+            </p>
+          )}
+
+          <div
+            className="mt-4 flex flex-wrap gap-2 border-t border-line pt-4"
+            role="group"
+            aria-label="Approximate quantity"
+          >
+            {QTY_CHIPS.map((chip) => (
+              <button
+                key={chip.label}
+                type="button"
+                onClick={() => setQty(chip.value)}
+                className={`rounded-[8px] border px-3.5 py-2 text-sm transition-colors ${
+                  qty === chip.value
+                    ? "border-volt bg-volt/10 text-paper"
+                    : "border-line text-paper/65 hover:border-line-strong"
+                }`}
+              >
+                {chip.label}
+              </button>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* 3 — DETAILS */}
+      {/* 2 — DETAILS */}
       <section>
-        <Legend n="3" title="Your details" />
+        <Legend n="2" title="Your details" />
         <p className="mt-3 text-sm text-paper/55">
-          So we can send your quote and proof back to you. We never share these or
-          add you to a mailing list.
+          So we can send your {mode === "buy" ? "confirmation" : "quote and proof"}{" "}
+          back to you. We never share these or add you to a mailing list.
         </p>
 
         <div className="mt-5 rounded-lg border border-line-strong bg-ink-2 p-5 sm:p-6">
@@ -542,7 +401,11 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
             <Field
               label="Email"
               required
-              hint="Where your quote and digital proof will land"
+              hint={
+                mode === "buy"
+                  ? "Where your receipt and order confirmation will land"
+                  : "Where your quote and digital proof will land"
+              }
               error={fieldErrors.email}
             >
               <input
@@ -571,12 +434,17 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
                 onChange={setC1("country")}
               />
             </Field>
-            <Field label="Phone" hint="Only if you'd rather we call you">
+            <Field
+              label="Phone"
+              required
+              hint="So we can reach you quickly about your order"
+              error={fieldErrors.phone}
+            >
               <input
                 id="qf-phone"
                 type="tel"
                 autoComplete="tel"
-                className={fieldCls()}
+                className={fieldCls(fieldErrors.phone)}
                 placeholder="+44 7700 900123"
                 value={c.phone}
                 onChange={setC1("phone")}
@@ -606,6 +474,345 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
         </div>
       </section>
 
+      {/* 3 — KIT */}
+      <section>
+        <Legend n="3" title="Your kit" />
+        <div className="mt-5">
+          {!customizeOpen ? (
+            <div className="rounded-lg border border-line-strong bg-ink-2 p-5 sm:p-6">
+              <p className="text-sm text-paper/75">
+                <span className="font-semibold text-paper">
+                  Not sure? We&apos;ll use our most popular setup:
+                </span>{" "}
+                {recommendedSummary}.
+              </p>
+              <button
+                type="button"
+                onClick={() => setCustomizeOpen(true)}
+                className="mt-3 text-sm font-semibold text-volt link-underline"
+              >
+                Customize these choices
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-5 rounded-lg border border-line-strong bg-ink-2 p-5 sm:p-6">
+              <button
+                type="button"
+                onClick={() => setCustomizeOpen(false)}
+                className="text-sm font-semibold text-volt link-underline"
+              >
+                ← Use the recommended setup instead
+              </button>
+              {groups.map((g) => {
+                const recId = recommendedId(g);
+                const showNotSure =
+                  g.type === "single" && selections[g.id] !== recId;
+                return (
+                  <div key={g.id}>
+                    <div className="flex items-baseline justify-between gap-3">
+                      <p className="field-label mb-0" id={`grp-${g.id}`}>{g.label}</p>
+                      {showNotSure && (
+                        <button
+                          type="button"
+                          onClick={() => setSingle(g.id, recId as string)}
+                          className="text-xs font-semibold text-volt link-underline"
+                        >
+                          Not sure? Use our pick
+                        </button>
+                      )}
+                    </div>
+                    <div
+                      className="mt-2 flex flex-wrap gap-2"
+                      role="group"
+                      aria-labelledby={`grp-${g.id}`}
+                    >
+                      {g.options.map((o) => {
+                        const on =
+                          g.type === "single"
+                            ? selections[g.id] === o.id
+                            : ((selections[g.id] as string[]) ?? []).includes(o.id);
+                        return (
+                          <button
+                            key={o.id}
+                            type="button"
+                            onClick={() =>
+                              g.type === "single"
+                                ? setSingle(g.id, o.id)
+                                : toggleMulti(g.id, o.id)
+                            }
+                            aria-pressed={on}
+                            className={`rounded-[8px] border px-3.5 py-2 text-sm transition-colors ${
+                              on
+                                ? "border-volt bg-volt/10 text-paper"
+                                : "border-line text-paper/65 hover:border-line-strong"
+                            }`}
+                          >
+                            {g.type === "multi" ? (on ? "✓ " : "+ ") : ""}
+                            {o.label}
+                            {o.recommended ? (
+                              <span className="ml-1.5 text-[0.65rem] uppercase tracking-wide text-volt/80">
+                                Recommended
+                              </span>
+                            ) : null}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* 4 — EXTRA DETAILS (sizes + roster, both optional, both deferred) */}
+      <section>
+        <Legend n="4" title="Extra details" />
+        <div className="mt-5">
+          {!detailsOpen ? (
+            <button
+              type="button"
+              onClick={() => setDetailsOpen(true)}
+              className="text-sm font-semibold text-volt link-underline"
+            >
+              + Add exact sizes, player names &amp; numbers (optional)
+            </button>
+          ) : (
+            <div className="space-y-6 rounded-lg border border-line-strong bg-ink-2 p-5 sm:p-6">
+              {/* exact sizes */}
+              <div>
+                <div className="flex items-baseline justify-between">
+                  <p className="field-label mb-0" id="grp-sizes">
+                    Quantity by size <span className="text-paper/55">(optional)</span>
+                  </p>
+                  <p className="text-xs text-paper/60" aria-live="polite">
+                    Adds up to <span className="text-paper/80">{sizesTotal}</span>
+                  </p>
+                </div>
+                <div
+                  className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-5"
+                  role="group"
+                  aria-labelledby="grp-sizes"
+                >
+                  {SIZES.map((s) => (
+                    <label key={s} className="flex flex-col">
+                      <span className="text-center text-[0.65rem] uppercase tracking-wide text-paper/60">
+                        {s}
+                      </span>
+                      <input
+                        type="number"
+                        min={0}
+                        inputMode="numeric"
+                        aria-label={`Quantity, size ${s}`}
+                        value={sizes[s] ?? ""}
+                        onChange={(e) =>
+                          setSizes((p) => ({ ...p, [s]: Math.max(0, Number(e.target.value) || 0) }))
+                        }
+                        placeholder="0"
+                        className="field !px-2 !py-1.5 text-center text-sm"
+                      />
+                    </label>
+                  ))}
+                </div>
+                {sizesTotal > 0 && sizesTotal !== qty && (
+                  <p className="mt-1.5 text-xs text-paper/60">
+                    This adds up to {sizesTotal} — we&apos;ll confirm final sizes with
+                    you before production.
+                  </p>
+                )}
+              </div>
+
+              {/* players */}
+              <div className="border-t border-line pt-5">
+                <div className="flex items-baseline justify-between">
+                  <p className="field-label mb-0">
+                    Player names &amp; numbers{" "}
+                    <span className="text-paper/55">(optional)</span>
+                  </p>
+                  {players.length > 0 && (
+                    <p className="text-xs text-paper/60">
+                      {players.length} player{players.length === 1 ? "" : "s"}
+                    </p>
+                  )}
+                </div>
+
+                {players.length > 0 && (
+                  <ul className="mt-3 space-y-2">
+                    {players.map((p, i) => (
+                      <li key={p.id} className="flex items-center gap-2">
+                        <span className="w-6 shrink-0 text-center text-xs font-semibold text-paper/60">
+                          {i + 1}
+                        </span>
+                        <input
+                          value={p.name}
+                          onChange={(e) => updatePlayer(p.id, { name: e.target.value })}
+                          placeholder="Name on back"
+                          aria-label={`Player ${i + 1} name`}
+                          className="field !py-2 min-w-0 flex-1 text-sm"
+                        />
+                        <input
+                          value={p.number}
+                          onChange={(e) =>
+                            updatePlayer(p.id, {
+                              number: e.target.value.replace(/[^0-9]/g, "").slice(0, 3),
+                            })
+                          }
+                          inputMode="numeric"
+                          placeholder="No."
+                          aria-label={`Player ${i + 1} number`}
+                          className="field !w-16 !py-2 shrink-0 text-center text-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removePlayer(p.id)}
+                          aria-label={`Remove player ${i + 1}`}
+                          className="grid h-10 w-10 shrink-0 place-items-center rounded-[6px] border border-line text-paper/60 transition-colors hover:border-ember hover:text-ember"
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <path d="M6 6l12 12M18 6L6 18" />
+                          </svg>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <button
+                  type="button"
+                  onClick={addPlayer}
+                  className="mt-3 inline-flex items-center gap-2.5 rounded-[8px] border border-line-strong py-2 pl-2 pr-4 text-sm font-medium text-paper/80 transition-colors hover:border-volt hover:text-volt"
+                >
+                  <span className="grid h-6 w-6 place-items-center rounded-full bg-volt/15 text-[0.72rem] font-bold text-volt">
+                    {players.length + 1}
+                  </span>
+                  Add {players.length === 0 ? "new" : "another"} player
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* 5 — REFERENCE */}
+      <section>
+        <Legend n="5" title="Reference design" />
+        <div className="mt-5 space-y-4">
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Do you have a design?">
+            <button
+              type="button"
+              onClick={() => setNeedsDesignHelp(false)}
+              aria-pressed={!needsDesignHelp}
+              className={`rounded-[8px] border px-3.5 py-2 text-sm transition-colors ${
+                !needsDesignHelp
+                  ? "border-volt bg-volt/10 text-paper"
+                  : "border-line text-paper/65 hover:border-line-strong"
+              }`}
+            >
+              I have a design
+            </button>
+            <button
+              type="button"
+              onClick={() => setNeedsDesignHelp(true)}
+              aria-pressed={needsDesignHelp}
+              className={`rounded-[8px] border px-3.5 py-2 text-sm transition-colors ${
+                needsDesignHelp
+                  ? "border-volt bg-volt/10 text-paper"
+                  : "border-line text-paper/65 hover:border-line-strong"
+              }`}
+            >
+              I don&apos;t have a design yet — I need design help
+            </button>
+          </div>
+
+          <div className="space-y-4 rounded-lg border border-line-strong bg-ink-2 p-5 sm:p-6">
+          {needsDesignHelp ? (
+            <p className="text-sm text-paper/70">
+              No problem — add any colour or style ideas below and our studio
+              will design your kit with you, no charge to get started.
+            </p>
+          ) : (
+            <div>
+              <p className="field-label" id="grp-file">Upload the design you have in mind</p>
+              <label className="file-drop flex cursor-pointer items-center gap-4 rounded-md border border-dashed border-line-strong bg-ink p-4 transition-colors hover:border-volt">
+                <input
+                  ref={fileInput}
+                  type="file"
+                  accept="image/*,.pdf,.ai,.eps"
+                  onChange={onFile}
+                  aria-labelledby="grp-file"
+                  aria-describedby="file-status"
+                  aria-invalid={fieldErrors.file ? true : undefined}
+                  className="sr-only"
+                />
+                {filePreview ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={filePreview}
+                    alt="Reference preview"
+                    className="h-16 w-16 rounded-sm object-cover"
+                  />
+                ) : (
+                  <span className="grid h-16 w-16 shrink-0 place-items-center rounded-sm border border-line text-paper/60">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 16V4m0 0 4 4m-4-4L8 8" />
+                      <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+                    </svg>
+                  </span>
+                )}
+                <span className="text-sm">
+                  <span className="font-semibold text-paper">
+                    {file ? file.name : "Choose a file"}
+                  </span>
+                  <span
+                    id="file-status"
+                    className="mt-0.5 block text-xs text-paper/60"
+                    aria-live="polite"
+                  >
+                    {isUploading
+                      ? "Uploading…"
+                      : referenceUrl
+                        ? "✓ Uploaded"
+                        : `PNG, JPG, PDF, AI or EPS · up to ${MAX_FILE_MB} MB`}
+                  </span>
+                  {referenceUrl && (
+                    <a
+                      href={referenceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="mt-0.5 block truncate text-xs text-volt link-underline"
+                    >
+                      {referenceUrl}
+                    </a>
+                  )}
+                  {fieldErrors.file && (
+                    <span role="alert" className="mt-0.5 block text-xs font-medium text-ember">
+                      {fieldErrors.file}
+                    </span>
+                  )}
+                </span>
+              </label>
+            </div>
+          )}
+
+          <div>
+            <label htmlFor="notes" className="field-label">
+              Design notes
+            </label>
+            <textarea
+              id="notes"
+              rows={4}
+              value={designNotes}
+              onChange={(e) => setDesignNotes(e.target.value)}
+              placeholder="Team colours (Pantone if you have them), sponsor placement, collar style, deadline, links to artwork…"
+              className="field resize-none"
+            />
+          </div>
+          </div>
+        </div>
+      </section>
+
       {status === "error" && (
         <p
           role="alert"
@@ -616,6 +823,21 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
       )}
 
       <div>
+        {mode === "buy" && (
+          <div className="mb-5 rounded-lg border border-volt/40 bg-volt/5 p-5">
+            <div className="flex items-baseline justify-between">
+              <p className="kicker text-volt">{quote.tier.label} price</p>
+              <p className="text-xs text-paper/60">{usd(quote.unitPriceDiscounted)} / unit</p>
+            </div>
+            <p className="mt-1 font-display text-3xl text-paper">{usd(quote.total)}</p>
+            <p className="mt-1 text-xs text-paper/60">
+              For {qty} units, all options included. Larger orders (
+              {BULK_THRESHOLD}+ units) get better per-unit pricing via a free
+              quote instead.
+            </p>
+          </div>
+        )}
+
         <button
           type="submit"
           disabled={status === "sending" || isUploading}
@@ -625,10 +847,14 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
             ? "Sending…"
             : isUploading
               ? "Uploading design…"
-              : "Submit quote request"}
+              : mode === "buy"
+                ? `Pay & secure my order — ${usd(quote.total)}`
+                : "Get my free quote"}
         </button>
         <p className="mt-3 text-xs text-paper/60">
-          No payment now. We reply with a firm quote and a proof within one business day.
+          {mode === "buy"
+            ? `Secure checkout · No hidden fees · Confirmation within ${FACTS.quoteReplyDays} business day`
+            : QUOTE_TRUST_LINE}
         </p>
       </div>
     </form>

@@ -40,6 +40,7 @@ export async function POST(req: Request) {
   const sportSlug = str("sport");
   const contactName = str("contactName");
   const email = str("email");
+  const phone = str("phone");
   const sport = getSport(sportSlug);
 
   // Spam defence — honeypot + time-trap + link flooding. Bots get a fake
@@ -63,9 +64,9 @@ export async function POST(req: Request) {
     );
   }
 
-  if (!sport || !contactName || !email) {
+  if (!sport || !contactName || !email || !phone) {
     return NextResponse.json(
-      { ok: false, error: "Please fill in your name, email and pick a sport." },
+      { ok: false, error: "Please fill in your name, email, phone and pick a sport." },
       { status: 422 }
     );
   }
@@ -119,7 +120,10 @@ export async function POST(req: Request) {
   } catch {
     sizes = {};
   }
-  const totalQty = Object.values(sizes).reduce((a, n) => a + (Number(n) || 0), 0);
+  const sizesSum = Object.values(sizes).reduce((a, n) => a + (Number(n) || 0), 0);
+  // Sizes are now optional — the approximate quantity from step 1 is the
+  // authoritative total; fall back to the size grid if it's somehow missing.
+  const totalQty = Number(str("qty")) || sizesSum;
   if (totalQty < MIN_ORDER_QTY) {
     return NextResponse.json(
       { ok: false, error: `Minimum order is ${MIN_ORDER_QTY} units.` },
@@ -131,8 +135,9 @@ export async function POST(req: Request) {
     Object.entries(sizes)
       .filter(([, n]) => Number(n) > 0)
       .map(([s, n]) => `${s}×${n}`)
-      .join("  ") || "Not specified";
+      .join("  ") || "Not specified — approximate only";
 
+  const designHelp = str("designHelp") === "yes";
   const extras = form.getAll("extras").map((v) => v.toString());
 
   const ref = quoteRef();
@@ -148,7 +153,10 @@ export async function POST(req: Request) {
     ["Size breakdown", sizeLine],
     ["Players (names / numbers)", str("roster") || "—"],
     ["Design notes", str("designNotes") || "—"],
-    ["Reference design", referenceUrl || "None uploaded"],
+    [
+      "Reference design",
+      designHelp ? "Needs design help — no file uploaded" : referenceUrl || "None uploaded",
+    ],
     ["—", "—"],
     ["Organisation", str("organization") || "—"],
     ["Contact name", contactName],
@@ -225,7 +233,10 @@ export async function POST(req: Request) {
         ["Add-ons", extrasLabels(extras)],
         ["Total quantity", String(totalQty)],
         ["Sizes", sizeLine],
-        ["Reference design", referenceUrl ? "Uploaded" : "None"],
+        [
+          "Reference design",
+          designHelp ? "You asked us for design help" : referenceUrl ? "Uploaded" : "None",
+        ],
       ],
     });
     await transporter.sendMail({

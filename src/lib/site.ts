@@ -48,6 +48,20 @@ export const FACTS = {
   productionDays: 14,
   /** Business days for a specialist to reply with a firm quote. */
   quoteReplyDays: 1,
+  /** Countries we've shipped finished kit to. */
+  countriesShipped: 48,
   priceCurrency: "USD",
   sizeRange: "Youth YS–YL and adult XS–3XL",
 } as const;
+
+/**
+ * Canonical explanation of the two-stage reply timeline. Several pages used
+ * to hand-write "reply within one business day with a firm quote AND a
+ * digital proof" — conflating quoteReplyDays and proofDays into one claim
+ * that contradicted the (correct) standalone proofDays claims elsewhere.
+ * Reuse this sentence instead of re-typing the numbers.
+ */
+export const REPLY_TIMELINE = `We reply within ${FACTS.quoteReplyDays} business day with pricing, and a full digital proof follows within ${FACTS.proofDays} business days.`;
+
+/** Short trust-badge line shown under the "get a quote" CTA. */
+export const QUOTE_TRUST_LINE = `No payment · No obligation · Reply within ${FACTS.quoteReplyDays} business day`;

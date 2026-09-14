@@ -4,6 +4,8 @@
    brand (#f26a21 / #b34a09), condensed uppercase headings.
  * ------------------------------------------------------------------ */
 
+import { FACTS } from "./site";
+
 function esc(s: string): string {
   return s.replace(/[&<>"]/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] as string
@@ -40,8 +42,9 @@ export interface CustomerConfirmationInput {
 
 const NEXT_STEPS = [
   "We check your fabric, decoration and sizing against production specs.",
-  "A digital proof and a firm quote land in your inbox within one business day.",
-  "You approve the proof — then production runs roughly 14 working days.",
+  `A firm quote lands in your inbox within ${FACTS.quoteReplyDays} business day.`,
+  `A full digital proof follows within ${FACTS.proofDays} business days.`,
+  `You approve the proof — then production runs roughly ${FACTS.productionDays} working days.`,
 ];
 
 export function customerConfirmationEmail(input: CustomerConfirmationInput): {
@@ -101,7 +104,7 @@ export function customerConfirmationEmail(input: CustomerConfirmationInput): {
               <p style="margin:0 0 10px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.26em;color:${C.brandDark};">Request received</p>
               <h1 style="margin:0 0 16px;font-family:${HEAD_FONT};font-weight:700;text-transform:uppercase;letter-spacing:0.02em;font-size:36px;line-height:1;color:${C.ink};">Thank you${hi}</h1>
               <p style="margin:0 0 22px;font-size:15px;line-height:1.6;color:${C.body};">
-                Your <strong style="color:${C.ink};">${esc(sportName)}</strong> kit request is with our studio. A specialist will review every detail and reply to <strong style="color:${C.ink};">${esc(email)}</strong> within one business day with a firm quote and a digital proof.
+                Your <strong style="color:${C.ink};">${esc(sportName)}</strong> kit request is with our studio. A specialist will review every detail and reply to <strong style="color:${C.ink};">${esc(email)}</strong> within ${FACTS.quoteReplyDays} business day with a firm quote — a full digital proof follows within ${FACTS.proofDays} business days.
               </p>
             </td>
           </tr>
@@ -158,7 +161,7 @@ export function customerConfirmationEmail(input: CustomerConfirmationInput): {
   const text = [
     `Thank you${firstName ? `, ${firstName}` : ""}.`,
     ``,
-    `Your ${sportName} kit request is with our studio. A specialist will reply to ${email} within one business day with a firm quote and a digital proof.`,
+    `Your ${sportName} kit request is with our studio. A specialist will reply to ${email} within ${FACTS.quoteReplyDays} business day with a firm quote — a full digital proof follows within ${FACTS.proofDays} business days.`,
     ``,
     `Your reference: ${ref}`,
     ``,
@@ -244,4 +247,163 @@ export function contactAutoReplyEmail(input: ContactAutoReplyInput): {
   ].join("\n");
 
   return { subject: "We've got your message — Elpuo", html, text };
+}
+
+/* ------------------------------------------------------------------ *
+   Paid-order confirmation — sent once Stripe confirms payment
+   (checkout.session.completed), not before.
+ * ------------------------------------------------------------------ */
+
+export interface PaidOrderConfirmationInput {
+  firstName: string;
+  sportName: string;
+  ref: string;
+  email: string;
+  qty: number;
+  total: string;
+  /** Label / value pairs summarising the order. */
+  summary: [string, string][];
+  contactEmail: string;
+}
+
+const PAID_NEXT_STEPS = [
+  "We confirm your exact sizes by email if you didn't already give us a breakdown.",
+  `Production starts once sizes are confirmed — roughly ${FACTS.productionDays} working days.`,
+  "We ship worldwide with tracking and email you the moment it's on its way.",
+];
+
+export function paidOrderConfirmationEmail(input: PaidOrderConfirmationInput): {
+  subject: string;
+  html: string;
+  text: string;
+} {
+  const { firstName, sportName, ref, email, qty, total, summary, contactEmail } = input;
+  const hi = firstName ? `, ${esc(firstName)}` : "";
+
+  const rows = summary
+    .map(
+      ([k, v], i) => `
+        <tr>
+          <td style="padding:10px 14px;background:${
+            i % 2 ? C.white : C.zebra
+          };font-size:13px;font-weight:700;color:${C.mist};white-space:nowrap;border-radius:6px 0 0 6px;">${esc(
+            k
+          )}</td>
+          <td style="padding:10px 14px;background:${
+            i % 2 ? C.white : C.zebra
+          };font-size:13px;color:${C.ink};border-radius:0 6px 6px 0;">${esc(v)}</td>
+        </tr>
+        <tr><td colspan="2" style="height:4px;line-height:4px;font-size:4px;">&nbsp;</td></tr>`
+    )
+    .join("");
+
+  const steps = PAID_NEXT_STEPS.map(
+    (s, i) => `
+      <tr>
+        <td width="34" valign="top" style="padding:0 12px 14px 0;">
+          <div style="width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:${C.brand};color:${C.white};font-family:${HEAD_FONT};font-weight:700;font-size:14px;">${i + 1}</div>
+        </td>
+        <td valign="top" style="padding:0 0 14px;font-size:14px;line-height:1.55;color:${C.body};">${esc(s)}</td>
+      </tr>`
+  ).join("");
+
+  const html = `<!doctype html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Payment received</title></head>
+<body style="margin:0;padding:0;background:${C.ground};">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.ground};">
+    <tr>
+      <td align="center" style="padding:32px 16px;">
+        <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="width:560px;max-width:100%;background:${C.card};border:1px solid ${C.line};border-radius:14px;overflow:hidden;font-family:${BODY_FONT};">
+          <tr>
+            <td style="background:${C.brand};padding:20px 32px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+                <td style="font-family:${HEAD_FONT};font-weight:700;text-transform:uppercase;letter-spacing:0.22em;font-size:20px;color:${C.white};">ELPUO</td>
+                <td align="right" style="font-size:11px;text-transform:uppercase;letter-spacing:0.16em;color:rgba(255,255,255,0.82);">Custom teamwear</td>
+              </tr></table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:36px 32px 4px;">
+              <p style="margin:0 0 10px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.26em;color:${C.brandDark};">Payment received</p>
+              <h1 style="margin:0 0 16px;font-family:${HEAD_FONT};font-weight:700;text-transform:uppercase;letter-spacing:0.02em;font-size:36px;line-height:1;color:${C.ink};">Thanks${hi}</h1>
+              <p style="margin:0 0 22px;font-size:15px;line-height:1.6;color:${C.body};">
+                Your order of <strong style="color:${C.ink};">${qty} × ${esc(sportName)}</strong> kit is confirmed — <strong style="color:${C.ink};">${esc(total)}</strong> charged to <strong style="color:${C.ink};">${esc(email)}</strong>.
+              </p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:0 32px 26px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px dashed #d8b48f;border-radius:10px;background:${C.tint};">
+                <tr><td style="padding:14px 18px;">
+                  <span style="font-size:11px;text-transform:uppercase;letter-spacing:0.2em;color:${C.brandDark};">Your order reference</span><br>
+                  <span style="font-family:${HEAD_FONT};font-weight:700;font-size:24px;letter-spacing:0.05em;color:${C.ink};">${esc(ref)}</span>
+                </td></tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:0 32px;">
+              <p style="margin:0 0 10px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.22em;color:${C.mist};">Your order</p>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:0;">
+                ${rows}
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:24px 32px 4px;">
+              <p style="margin:0 0 14px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.22em;color:${C.mist};">What happens next</p>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${steps}</table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:6px 32px 34px;">
+              <p style="margin:0;font-size:13px;line-height:1.6;color:${C.mist};">Reply to this email if you need to add or change anything before production starts.</p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="background:${C.ground};padding:20px 32px;border-top:1px solid ${C.line};">
+              <p style="margin:0;font-size:12px;line-height:1.7;color:${C.faint};">
+                Elpuo &middot; Custom sports uniforms<br>
+                Questions? <a href="mailto:${esc(contactEmail)}" style="color:${C.brandDark};text-decoration:none;">${esc(contactEmail)}</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+        <p style="margin:16px 0 0;font-size:11px;color:#a2a096;font-family:${BODY_FONT};">You received this because an order was paid for at Elpuo.</p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  const text = [
+    `Thanks${firstName ? `, ${firstName}` : ""}.`,
+    ``,
+    `Your order of ${qty} × ${sportName} kit is confirmed — ${total} charged to ${email}.`,
+    ``,
+    `Your order reference: ${ref}`,
+    ``,
+    `Your order`,
+    ...summary.map(([k, v]) => `  ${k}: ${v}`),
+    ``,
+    `What happens next`,
+    ...PAID_NEXT_STEPS.map((s, i) => `  ${i + 1}. ${s}`),
+    ``,
+    `Reply to this email if you need to add or change anything before production starts.`,
+    ``,
+    `Elpuo · Custom sports uniforms · ${contactEmail}`,
+  ].join("\n");
+
+  return {
+    subject: `Payment received — your ${sportName} order (${ref})`,
+    html,
+    text,
+  };
 }

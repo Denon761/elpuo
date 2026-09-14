@@ -5,29 +5,30 @@ import { JsonLd } from "@/components/site/JsonLd";
 import { MarqueeStrip } from "@/components/site/MarqueeStrip";
 import { Reveal } from "@/components/site/Reveal";
 import { SportCard } from "@/components/site/SportCard";
-import { SPORTS } from "@/lib/catalog";
-import { abs } from "@/lib/site";
+import { BULK_THRESHOLD } from "@/lib/pricing";
+import { MIN_ORDER_QTY, SPORTS } from "@/lib/catalog";
+import { abs, FACTS } from "@/lib/site";
 
 const STEPS = [
   {
     n: "01",
-    title: "Pick your sport",
-    body: "Ten disciplines, each on its own sport-correct block — from netball tanks to gridiron jerseys cut for pads.",
+    title: "Tell us roughly what you need",
+    body: "Pick a sport and give us an approximate quantity and your contact details. No technical decisions required yet.",
   },
   {
     n: "02",
-    title: "Choose fabric & options",
-    body: "Fabric weight, decoration method, kit pieces, names-and-numbers technique and add-ons — a short, simple form.",
+    title: "We handle the complicated part",
+    body: "We pre-select our most popular fabric, decoration and names-and-numbers setup. Customize any of it if you want to, or leave it to us.",
   },
   {
     n: "03",
-    title: "Upload your design",
-    body: "Attach the artwork you have in mind, add your sizes and any player names and numbers, and note the details.",
+    title: "Add your design",
+    body: "Upload the artwork you have in mind, or tell us you don't have one yet — our studio helps you create one.",
   },
   {
     n: "04",
-    title: "Submit for a quote",
-    body: "Send it to our studio with your contact details. We confirm artwork, price it and put it on the print floor.",
+    title: "Check out or get a quote",
+    body: `Orders under ${BULK_THRESHOLD} units see live pricing and pay on the spot. Larger orders get a free quote from our studio — nothing charged.`,
   },
 ];
 
@@ -41,38 +42,38 @@ const FEATURES = [
     body: "Sewn twill numbers and embroidered crests for the pro look, on the same kit if you want it.",
   },
   {
-    title: "Upload your own design",
-    body: "Attach the artwork you already have — a sketch, a mockup or print-ready files — straight into the quote request.",
+    title: "No design? No problem",
+    body: "Upload artwork you already have, or tell us you need design help — our studio can create one with you.",
   },
   {
-    title: "One simple form",
-    body: "No cart, no checkout. Pick fabric and options, add sizes and players, submit. We reply with a firm quote.",
+    title: "One simple request",
+    body: `Tell us roughly what you need. Small orders (under ${BULK_THRESHOLD} units) check out instantly; larger orders get a firm quote from a specialist.`,
   },
 ];
 
 const STATS = [
   { k: "10", v: "sports on dedicated blocks" },
-  { k: "14 days", v: "standard production" },
-  { k: "48", v: "countries shipped" },
+  { k: `${FACTS.productionDays} days`, v: "standard production" },
+  { k: String(FACTS.countriesShipped), v: "countries shipped" },
   { k: "in-house", v: "sublimation print floor" },
 ];
 
 const FAQS = [
   {
     q: "Is there a minimum order?",
-    a: "Yes — 3 units per order, right through to full club runs. Tell us the quantities in your request and we price accordingly.",
+    a: `Yes — ${MIN_ORDER_QTY} units per order, right through to full club runs. Tell us the quantities in your request and we price accordingly.`,
   },
   {
     q: "How do I customise the kit?",
-    a: "On each sport page you pick fabric, decoration method, kit pieces and a few options, add your size breakdown and any player names and numbers, then upload your design. It's one short form.",
+    a: "On each sport page we pre-select our most popular fabric, decoration method, kit pieces and options for you. You can customise any of it, add a size breakdown and player names and numbers, then add your design. It's one short request.",
   },
   {
     q: "Do I pay on the website?",
-    a: "No. There's no cart or checkout. You submit a quote request and our team confirms artwork and specs, then sends a firm quote and invoice.",
+    a: `Depends on quantity. Orders under ${BULK_THRESHOLD} units see live pricing and pay securely on the spot. Orders of ${BULK_THRESHOLD}+ units skip payment — you submit a free quote request and our team sends a firm quote and invoice instead.`,
   },
   {
     q: "Can I upload my own design?",
-    a: "Yes — attach the artwork you have in mind (PNG, JPG, PDF, AI or EPS) directly in the request, and add colour references or notes alongside it.",
+    a: "Yes — attach the artwork you have in mind (PNG, JPG, PDF, AI or EPS) directly in the request, and add colour references or notes alongside it. Don't have a design yet? Tell us — our studio can help you create one.",
   },
   {
     q: "What files do you need for logos?",
@@ -131,9 +132,9 @@ export default function HomePage() {
             </Reveal>
             <Reveal delay={120}>
               <p className="mx-auto mt-6 max-w-2xl text-lg text-paper/65 md:text-xl">
-                Custom uniforms for ten sports. Pick your fabric and options,
-                upload the design you have in mind, and submit one short form for
-                a quote. No cart, no checkout, no order forms by email.
+                Custom sports uniforms for ten disciplines. Tell us roughly what
+                you need and we&apos;ll handle the complicated part — small
+                orders check out instantly, bigger orders get a free quote.
               </p>
             </Reveal>
             <Reveal delay={180}>
@@ -292,8 +293,8 @@ export default function HomePage() {
                 Your kit is <span className="text-lime">10 minutes</span> away
               </h2>
               <p className="mt-4 max-w-md text-paper/65">
-                Start with any sport. Nothing is charged — you&apos;ll get a quote
-                back within one business day.
+                Start with any sport. Small orders check out instantly at a live
+                price — bigger orders get a free quote, nothing charged.
               </p>
             </div>
             <ButtonLink href="/sports" size="lg" className="shrink-0">

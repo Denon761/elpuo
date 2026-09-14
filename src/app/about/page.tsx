@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ButtonLink } from "@/components/ui/Button";
 import { Reveal } from "@/components/site/Reveal";
+import { FACTS } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "About",
@@ -58,8 +59,8 @@ export default function AboutPage() {
             <div className="grid grid-cols-2 gap-3 text-center">
               {[
                 ["10", "sports"],
-                ["14 days", "standard build"],
-                ["48", "countries shipped"],
+                [`${FACTS.productionDays} days`, "standard build"],
+                [String(FACTS.countriesShipped), "countries shipped"],
                 ["100%", "in-house decoration"],
               ].map(([k, v]) => (
                 <div

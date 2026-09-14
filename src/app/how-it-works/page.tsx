@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ButtonLink } from "@/components/ui/Button";
 import { Reveal } from "@/components/site/Reveal";
+import { REPLY_TIMELINE } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "How It Works",
@@ -12,31 +13,32 @@ export const metadata: Metadata = {
 const PHASES = [
   {
     n: "01",
-    t: "Choose",
-    d: "Open any sport and work down one short form: fabric weight, decoration method, kit pieces, names-and-numbers technique and add-ons. Product photos show the make and fit.",
+    t: "Tell us roughly what you need",
+    d: "Open any sport and start with just an approximate quantity and your contact details — nothing technical yet. We pre-select our most popular fabric, decoration and names-and-numbers setup for you.",
     points: [
-      "Full sublimation, screen print or cut & sew",
-      "Heat vinyl, tackle twill or embroidery for names & badges",
-      "Team crest, captain's armband, neck tags, matchday bag",
+      "Just a rough headcount to start — exact sizes are optional",
+      "Recommended options are pre-picked; customize only if you want to",
+      "Not sure on a choice? One click sets it to our pick",
     ],
   },
   {
     n: "02",
-    t: "Sizes & design",
-    d: "Enter a size breakdown and total quantity, list any player names and numbers, then upload the design you have in mind — a sketch, a mockup or print-ready files — with colour notes.",
+    t: "Add design & sizes",
+    d: "Upload the design you have in mind — a sketch, a mockup or print-ready files — or tell us you don't have one yet and need design help. Add player names, numbers and an exact size breakdown if you have them.",
     points: [
-      "Size grid from YS to 3XL",
-      "Player names & numbers, one per line",
+      "No design yet? Flag it and our studio helps you create one",
+      "Size grid from YS to 3XL, entirely optional at this stage",
       "Attach PNG, JPG, PDF, AI or EPS up to 8 MB",
     ],
   },
   {
     n: "03",
-    t: "Submit for a quote",
-    d: "Add your contact details and submit. Nothing is charged. A kit specialist reviews artwork and specs and replies by email with a firm quote plus a digital proof within one business day.",
+    t: "Check out or get a quote",
+    d: "Orders under 30 units see live pricing and pay securely on the spot. Larger orders submit for a free quote instead — nothing charged. " +
+      REPLY_TIMELINE,
     points: [
-      "No cart, no checkout — one form",
-      "Proof issued in ~2 business days",
+      "Under 30 units: instant pricing, pay on-site",
+      "30+ units: no payment — a specialist quotes it for you",
       "Nothing prints without your written approval",
     ],
   },

@@ -520,13 +520,19 @@ export const FABRIC: OptionGroup = {
 
 export const KIT: OptionGroup = {
   id: "kit",
-  label: "Kit pieces",
+  label: "Top, bottom or both",
   type: "single",
-  defaultValue: "jersey",
+  defaultValue: "both",
   options: [
-    { id: "jersey", label: "Jersey only", delta: 0, recommended: true },
-    { id: "jersey-shorts", label: "Jersey + shorts", delta: 19 },
-    { id: "full", label: "Full kit + socks", delta: 34 },
+    { id: "top", label: "Top only", delta: -4, desc: "Just the jersey / shirt." },
+    { id: "bottom", label: "Bottom only", delta: -2, desc: "Just the shorts." },
+    {
+      id: "both",
+      label: "Both — top & bottom",
+      delta: 0,
+      recommended: true,
+      desc: "Full jersey and shorts set — the price shown on this page.",
+    },
   ],
 };
 
