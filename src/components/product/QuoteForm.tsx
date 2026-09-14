@@ -11,6 +11,7 @@ import {
   type ReactElement,
 } from "react";
 import { MIN_ORDER_QTY, SIZES } from "@/lib/catalog";
+import { EmbeddedPayment } from "@/components/product/EmbeddedPayment";
 import { usd } from "@/lib/format";
 import { BULK_THRESHOLD, priceForQty } from "@/lib/pricing";
 import { FACTS, QUOTE_TRUST_LINE } from "@/lib/site";
@@ -97,6 +98,7 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
   });
 
   const [status, setStatus] = useState<Status>("idle");
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const fileInput = useRef<HTMLInputElement>(null);
@@ -257,8 +259,9 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.ok) {
-        if (mode === "buy" && data.url) {
-          window.location.href = data.url;
+        if (mode === "buy" && data.clientSecret) {
+          setClientSecret(data.clientSecret);
+          setStatus("idle");
           return;
         }
         setStatus("sent");
@@ -273,6 +276,10 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
       setStatus("error");
       setErrorMsg("Network error — please check your connection and retry.");
     }
+  }
+
+  if (clientSecret) {
+    return <EmbeddedPayment clientSecret={clientSecret} onClose={() => setClientSecret(null)} />;
   }
 
   if (status === "sent") {

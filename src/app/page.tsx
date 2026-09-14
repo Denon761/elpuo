@@ -123,27 +123,27 @@ export default function HomePage() {
         <div className="container-x relative">
           <div className="mx-auto max-w-5xl text-center">
             <Reveal>
-              <p className="kicker text-volt">Custom teamwear · sublimated in-house</p>
+              <p className="kicker text-volt">Sublimated in-house · ten sports</p>
             </Reveal>
             <Reveal delay={60}>
               <h1 className="mt-5 font-display uppercase leading-[0.95] tracking-[0.01em] text-[clamp(2.3rem,6.2vw,4.75rem)]">
-                Built for your <span className="text-volt">side</span>.
+                Custom Sports <span className="text-volt">Uniforms</span>
               </h1>
             </Reveal>
             <Reveal delay={120}>
               <p className="mx-auto mt-6 max-w-2xl text-lg text-paper/65 md:text-xl">
-                Custom sports uniforms for ten disciplines. Tell us roughly what
-                you need and we&apos;ll handle the complicated part — small
-                orders check out instantly, bigger orders get a free quote.
+                Tell us roughly what you need and we&apos;ll handle the
+                complicated part — small orders check out instantly, bigger
+                orders get a free quote.
               </p>
             </Reveal>
             <Reveal delay={180}>
               <div className="mt-9 flex flex-wrap justify-center gap-3">
                 <ButtonLink href="/sports" size="lg">
-                  Start your kit
+                  Shop Kit
                 </ButtonLink>
-                <ButtonLink href="/how-it-works" variant="outline" size="lg">
-                  How it works
+                <ButtonLink href="/sports" variant="outline" size="lg">
+                  See all products
                 </ButtonLink>
               </div>
             </Reveal>

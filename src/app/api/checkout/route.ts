@@ -3,7 +3,7 @@ import { DESIGN_METHOD, EXTRAS, FABRIC, KIT, MIN_ORDER_QTY, TECHNIQUE, getSport 
 import { quoteRef, usd } from "@/lib/format";
 import { clientIp, looksLikeSpam, rateLimit } from "@/lib/mailer";
 import { BULK_THRESHOLD, priceForQty } from "@/lib/pricing";
-import { abs, SITE_URL } from "@/lib/site";
+import { abs } from "@/lib/site";
 import { getStripe, PaymentNotConfiguredError } from "@/lib/stripe";
 
 export const runtime = "nodejs";
@@ -113,6 +113,14 @@ export async function POST(req: Request) {
   try {
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
+      // Embedded, not hosted — the payment form renders directly on the
+      // sport page via the publishable key; the customer never leaves the
+      // site. return_url is only used if a payment method needs a full-page
+      // redirect (e.g. 3D Secure) and then brings them back.
+      ui_mode: "embedded_page",
+      return_url: abs(
+        `/thank-you?sport=${sport.slug}&paid=1&ref=${ref}&session_id={CHECKOUT_SESSION_ID}`
+      ),
       customer_email: email,
       line_items: [
         {
@@ -130,8 +138,6 @@ export async function POST(req: Request) {
           },
         },
       ],
-      success_url: abs(`/thank-you?sport=${sport.slug}&paid=1&ref=${ref}`),
-      cancel_url: abs(`/sports/${sport.slug}?checkout=cancelled`),
       metadata: {
         ref,
         sport: sport.slug,
@@ -157,8 +163,8 @@ export async function POST(req: Request) {
       },
     });
 
-    if (!session.url) throw new Error("Stripe session created without a URL");
-    return NextResponse.json({ ok: true, url: session.url, ref });
+    if (!session.client_secret) throw new Error("Stripe session created without a client secret");
+    return NextResponse.json({ ok: true, clientSecret: session.client_secret, ref });
   } catch (err) {
     console.error("[checkout] stripe session creation failed:", err);
     return NextResponse.json(

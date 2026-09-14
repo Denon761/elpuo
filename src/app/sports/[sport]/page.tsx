@@ -49,16 +49,12 @@ export async function generateMetadata({
 
 export default async function SportPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ sport: string }>;
-  searchParams: Promise<{ checkout?: string }>;
 }) {
   const { sport: slug } = await params;
-  const { checkout } = await searchParams;
   const sport = getSport(slug);
   if (!sport) notFound();
-  const checkoutCancelled = checkout === "cancelled";
 
   const groups = groupsFor(sport);
   const related = SPORTS.filter((s) => s.slug !== sport.slug).slice(0, 5);
@@ -188,17 +184,6 @@ export default async function SportPage({
 
       {/* gallery + quote form */}
       <section className="bg-ink pb-24 pt-6">
-        <div className="container-x">
-          {checkoutCancelled && (
-            <p
-              role="status"
-              className="mb-6 rounded-md border border-line-strong bg-ink-2 px-4 py-3 text-sm text-paper/70"
-            >
-              Checkout was cancelled — no payment was taken. Pick up where you
-              left off whenever you&apos;re ready.
-            </p>
-          )}
-        </div>
         <div className="container-x grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,520px)]">
           <ProductGallery sport={sport} />
           <div className="min-w-0">
