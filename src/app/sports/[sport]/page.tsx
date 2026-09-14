@@ -154,29 +154,18 @@ export default async function SportPage({
               </span>
             </nav>
           </Reveal>
-          <div className="mt-5 flex flex-wrap items-end justify-between gap-6">
-            <div>
-              <Reveal delay={60}>
-                <p className="kicker text-volt">{sport.discipline}</p>
-              </Reveal>
-              <Reveal delay={100}>
-                <h1 className="display-1 mt-3">
-                  Custom {sport.name}
-                  {sport.slug === "soccer" ? " / Football" : ""} Uniforms
-                </h1>
-              </Reveal>
-              <Reveal delay={150}>
-                <p className="mt-4 max-w-2xl text-lg text-paper/65">{sport.blurb}</p>
-              </Reveal>
-            </div>
-            <Reveal delay={180}>
-              <div className="rounded-md border border-line bg-ink-2 px-6 py-4 text-right">
-                <p className="kicker text-paper/60">from</p>
-                <p className="font-display text-4xl text-volt">{usd(sport.unitBase)}</p>
-                <p className="mt-1 text-xs text-paper/60">
-                  per unit · indicative · min. {MIN_ORDER_QTY} units
-                </p>
-              </div>
+          <div className="mt-5">
+            <Reveal delay={60}>
+              <p className="kicker text-volt">{sport.discipline}</p>
+            </Reveal>
+            <Reveal delay={100}>
+              <h1 className="display-1 mt-3">
+                Custom {sport.name}
+                {sport.slug === "soccer" ? " / Football" : ""} Uniforms
+              </h1>
+            </Reveal>
+            <Reveal delay={150}>
+              <p className="mt-4 max-w-2xl text-lg text-paper/65">{sport.blurb}</p>
             </Reveal>
           </div>
         </div>
