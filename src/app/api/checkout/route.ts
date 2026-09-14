@@ -121,6 +121,9 @@ export async function POST(req: Request) {
       return_url: abs(
         `/thank-you?sport=${sport.slug}&paid=1&ref=${ref}&session_id={CHECKOUT_SESSION_ID}`
       ),
+      // Shows up as a searchable field on the Checkout Session in the
+      // Stripe Dashboard — our own order number, for tracking.
+      client_reference_id: ref,
       customer_email: email,
       line_items: [
         {
@@ -138,6 +141,18 @@ export async function POST(req: Request) {
           },
         },
       ],
+      // The Payments list in the Dashboard shows the PaymentIntent, not the
+      // Checkout Session — so the order ref and quantity need to live here
+      // too, not just in the session metadata below, to be visible at a
+      // glance without opening the session.
+      payment_intent_data: {
+        description: `Order ${ref} — ${qty}× Custom ${sport.name} Uniform`,
+        metadata: {
+          ref,
+          qty: String(qty),
+          sport: sport.slug,
+        },
+      },
       metadata: {
         ref,
         sport: sport.slug,
