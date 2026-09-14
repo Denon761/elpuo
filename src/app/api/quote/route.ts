@@ -79,7 +79,7 @@ export async function POST(req: Request) {
     mailer = getMailer();
   } catch (err) {
     if (err instanceof MailNotConfiguredError) {
-      console.error("[quote] SMTP env vars are not set — see .env.example");
+      console.error("[quote] SMTP env vars are not set — set it in .env.local");
       return NextResponse.json(
         { ok: false, error: "The quote mailbox isn't configured yet. Please email us directly." },
         { status: 500 }

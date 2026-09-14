@@ -97,7 +97,7 @@ export async function POST(req: Request) {
     stripe = getStripe();
   } catch (err) {
     if (err instanceof PaymentNotConfiguredError) {
-      console.error("[checkout] STRIPE_SECRET_KEY is not set — see .env.example");
+      console.error("[checkout] STRIPE_SECRET_KEY is not set — set it in .env.local");
       return NextResponse.json(
         { ok: false, error: "On-site checkout isn't configured yet. Please email us directly." },
         { status: 500 }

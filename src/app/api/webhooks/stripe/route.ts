@@ -14,7 +14,7 @@ export const runtime = "nodejs";
 export async function POST(req: Request) {
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!secret) {
-    console.error("[stripe webhook] STRIPE_WEBHOOK_SECRET is not set — see .env.example");
+    console.error("[stripe webhook] STRIPE_WEBHOOK_SECRET is not set — set it in .env.local");
     return NextResponse.json({ error: "Webhook not configured" }, { status: 500 });
   }
 

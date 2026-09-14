@@ -86,11 +86,18 @@ export function ContactForm() {
 
   return (
     <form className="space-y-4" noValidate onSubmit={onSubmit}>
-      {/* honeypot — visually hidden, off-screen, not announced */}
-      <div aria-hidden className="absolute h-0 w-0 overflow-hidden opacity-0">
-        <label htmlFor={fid("company")}>Company (leave blank)</label>
+      {/* honeypot — hidden from users, catches bots. Named/labelled away
+          from "company"/"website"/etc: real browser autofill (Chrome's
+          address/company profile) was matching that name and silently
+          filling this field for real visitors, tripping the spam filter
+          and blocking legitimate submissions. display:none (not just
+          zero-size + opacity) also keeps most autofill engines from
+          targeting it at all. */}
+      <div aria-hidden style={{ display: "none" }}>
+        <label htmlFor={fid("hp")}>Leave this field blank</label>
         <input
-          id={fid("company")}
+          id={fid("hp")}
+          name="hp_check"
           type="text"
           tabIndex={-1}
           autoComplete="off"

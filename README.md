@@ -21,16 +21,20 @@ customer gets a firm quote back.
   Logo: `public/logo.png`.
 - No database. Catalogue is typed data in `src/lib/catalog.ts`.
 
-## Configure email — the editing place
+## Configure env — the editing place
 
-1. Copy `.env.example` to `.env.local` (already git-ignored) — or edit the
-   `.env.local` that's already there.
-2. Fill in the SMTP + site values (see `.env.example` for the full list and
-   comments): `SMTP_HOST/PORT/SECURE/USER/PASS`, `QUOTE_FROM_EMAIL`,
-   `QUOTE_TO_EMAIL`, `NEXT_PUBLIC_CONTACT_EMAIL`, `NEXT_PUBLIC_SITE_URL`.
+There's a single `.env.local` (git-ignored, never committed — don't put real
+values anywhere else). Fill in:
 
-3. Restart `npm run dev`. Until SMTP is set, both forms return a friendly
-   "mailbox isn't configured yet" message instead of sending.
+- SMTP: `SMTP_HOST/PORT/SECURE/USER/PASS`, `QUOTE_FROM_EMAIL`,
+  `QUOTE_TO_EMAIL`, `NEXT_PUBLIC_CONTACT_EMAIL`
+- Stripe (on-site checkout for orders under 30 units): `STRIPE_SECRET_KEY`,
+  `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`
+- `NEXT_PUBLIC_SITE_URL`
+
+Restart `npm run dev` after editing. Until SMTP/Stripe are set, the relevant
+forms return a friendly "not configured yet" message instead of sending or
+charging.
 
 Both `src/app/api/quote/route.ts` and `src/app/api/contact/route.ts` (Node
 runtime) share the transport in `src/lib/mailer.ts`. They mail a formatted

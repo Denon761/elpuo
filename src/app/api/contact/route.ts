@@ -71,7 +71,7 @@ export async function POST(req: Request) {
     mailer = getMailer();
   } catch (err) {
     if (err instanceof MailNotConfiguredError) {
-      console.error("[contact] SMTP env vars are not set — see .env.example");
+      console.error("[contact] SMTP env vars are not set — set it in .env.local");
       return NextResponse.json(
         { ok: false, error: "Our mailbox isn't configured yet. Please email us directly." },
         { status: 500 }

@@ -301,11 +301,18 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
 
   return (
     <form onSubmit={onSubmit} className="space-y-10">
-      {/* honeypot — hidden from users, catches bots */}
-      <div aria-hidden className="absolute h-0 w-0 overflow-hidden opacity-0">
-        <label htmlFor="qf-company">Company (leave blank)</label>
+      {/* honeypot — hidden from users, catches bots. Named/labelled away
+          from "company"/"website"/etc: real browser autofill (Chrome's
+          address/company profile) was matching that name and silently
+          filling this field for real visitors, tripping the spam filter
+          and blocking legitimate submissions. display:none (not just
+          zero-size + opacity) also keeps most autofill engines from
+          targeting it at all. */}
+      <div aria-hidden style={{ display: "none" }}>
+        <label htmlFor="qf-hp">Leave this field blank</label>
         <input
-          id="qf-company"
+          id="qf-hp"
+          name="hp_check"
           type="text"
           tabIndex={-1}
           autoComplete="off"

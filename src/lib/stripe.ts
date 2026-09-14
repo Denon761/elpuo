@@ -7,7 +7,7 @@ import Stripe from "stripe";
  */
 export class PaymentNotConfiguredError extends Error {
   constructor() {
-    super("STRIPE_SECRET_KEY is not set — see .env.example");
+    super("STRIPE_SECRET_KEY is not set — set it in .env.local");
     this.name = "PaymentNotConfiguredError";
   }
 }

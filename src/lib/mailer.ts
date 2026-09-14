@@ -6,7 +6,7 @@ import nodemailer from "nodemailer";
  */
 export class MailNotConfiguredError extends Error {
   constructor() {
-    super("SMTP env vars are not set — see .env.example");
+    super("SMTP env vars are not set — set it in .env.local");
     this.name = "MailNotConfiguredError";
   }
 }
