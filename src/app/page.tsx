@@ -4,10 +4,18 @@ import { ButtonLink } from "@/components/ui/Button";
 import { JsonLd } from "@/components/site/JsonLd";
 import { MarqueeStrip } from "@/components/site/MarqueeStrip";
 import { Reveal } from "@/components/site/Reveal";
+import { HeroSlideshow } from "@/components/site/HeroSlideshow";
 import { SportCard } from "@/components/site/SportCard";
 import { BULK_THRESHOLD } from "@/lib/pricing";
 import { MIN_ORDER_QTY, SPORTS } from "@/lib/catalog";
 import { abs, FACTS } from "@/lib/site";
+
+// Rotates on mobile only — add more paths here as new images come in.
+const MOBILE_HERO_IMAGES = [
+  "/hero-mobile.jpg",
+  "/hero-mobile-2.jpg",
+  "/hero-mobile-3.jpg",
+];
 
 const STEPS = [
   {
@@ -152,16 +160,12 @@ export default function HomePage() {
 
         {/* full-width hero image — shown in full at its native ratio, no crop */}
         <Reveal delay={120} className="relative mt-14 md:mt-20">
-          <div className="relative aspect-[792/916] w-full sm:hidden">
-            <Image
-              src="/hero-mobile.jpg"
-              alt="Athletes across ten sports wearing custom Elpuo uniforms"
-              fill
-              priority
-              sizes="100vw"
-              className="object-contain object-center"
-            />
-          </div>
+          <HeroSlideshow
+            images={MOBILE_HERO_IMAGES}
+            alt="Athletes across ten sports wearing custom Elpuo uniforms"
+            priority
+            className="aspect-[792/916] w-full sm:hidden"
+          />
           <div className="relative hidden aspect-[2575/823] w-full sm:block">
             <Image
               src="/hero.jpg"
