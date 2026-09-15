@@ -80,7 +80,6 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
   const [customizeOpen, setCustomizeOpen] = useState(true);
   const [qty, setQty] = useState<number>(MIN_ORDER_QTY);
   const [sizes, setSizes] = useState<Record<string, number>>({});
-  const [detailsOpen, setDetailsOpen] = useState(false);
   const [players, setPlayers] = useState<Player[]>([]);
   const [needsDesignHelp, setNeedsDesignHelp] = useState(false);
   const [designNotes, setDesignNotes] = useState("");
@@ -488,127 +487,117 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
       <section>
         <Legend n="3" title="Quantity by size" />
         <div className="mt-5">
-          {!detailsOpen ? (
-            <button
-              type="button"
-              onClick={() => setDetailsOpen(true)}
-              className="text-sm font-semibold text-volt link-underline"
-            >
-              + Add exact sizes, player names &amp; numbers (optional)
-            </button>
-          ) : (
-            <div className="space-y-6 rounded-lg border border-line-strong p-5 sm:p-6">
-              {/* exact sizes */}
-              <div>
-                <div className="flex items-baseline justify-between">
-                  <p className="field-label mb-0" id="grp-sizes">
-                    Quantity by size <span className="text-paper/55">(optional)</span>
+          <div className="space-y-6 rounded-lg border border-line-strong p-5 sm:p-6">
+            {/* exact sizes */}
+            <div>
+              <div className="flex items-baseline justify-between">
+                <p className="field-label mb-0" id="grp-sizes">
+                  Quantity by size <span className="text-paper/55">(optional)</span>
+                </p>
+                <p className="text-xs text-paper/60" aria-live="polite">
+                  Adds up to <span className="text-paper/80">{sizesTotal}</span>
+                </p>
+              </div>
+              <div
+                className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-5"
+                role="group"
+                aria-labelledby="grp-sizes"
+              >
+                {SIZES.map((s) => (
+                  <label key={s} className="flex flex-col">
+                    <span className="text-center text-[0.65rem] uppercase tracking-wide text-paper/60">
+                      {s}
+                    </span>
+                    <input
+                      type="number"
+                      min={0}
+                      inputMode="numeric"
+                      aria-label={`Quantity, size ${s}`}
+                      value={sizes[s] ?? ""}
+                      onChange={(e) =>
+                        setSizes((p) => ({ ...p, [s]: Math.max(0, Number(e.target.value) || 0) }))
+                      }
+                      placeholder="0"
+                      className="field !px-2 !py-1.5 text-center text-sm"
+                    />
+                  </label>
+                ))}
+              </div>
+              {sizesTotal > 0 && sizesTotal !== qty && (
+                <p className="mt-1.5 text-xs text-paper/60">
+                  This adds up to {sizesTotal} — we&apos;ll confirm final sizes with
+                  you before production.
+                </p>
+              )}
+            </div>
+
+            {/* players */}
+            <div className="border-t border-line pt-5">
+              <div className="flex items-baseline justify-between">
+                <p className="field-label mb-0">
+                  Player names &amp; numbers{" "}
+                  <span className="text-paper/55">(optional)</span>
+                </p>
+                {players.length > 0 && (
+                  <p className="text-xs text-paper/60">
+                    {players.length} player{players.length === 1 ? "" : "s"}
                   </p>
-                  <p className="text-xs text-paper/60" aria-live="polite">
-                    Adds up to <span className="text-paper/80">{sizesTotal}</span>
-                  </p>
-                </div>
-                <div
-                  className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-5"
-                  role="group"
-                  aria-labelledby="grp-sizes"
-                >
-                  {SIZES.map((s) => (
-                    <label key={s} className="flex flex-col">
-                      <span className="text-center text-[0.65rem] uppercase tracking-wide text-paper/60">
-                        {s}
+                )}
+              </div>
+
+              {players.length > 0 && (
+                <ul className="mt-3 space-y-2">
+                  {players.map((p, i) => (
+                    <li key={p.id} className="flex items-center gap-2">
+                      <span className="w-6 shrink-0 text-center text-xs font-semibold text-paper/60">
+                        {i + 1}
                       </span>
                       <input
-                        type="number"
-                        min={0}
-                        inputMode="numeric"
-                        aria-label={`Quantity, size ${s}`}
-                        value={sizes[s] ?? ""}
-                        onChange={(e) =>
-                          setSizes((p) => ({ ...p, [s]: Math.max(0, Number(e.target.value) || 0) }))
-                        }
-                        placeholder="0"
-                        className="field !px-2 !py-1.5 text-center text-sm"
+                        value={p.name}
+                        onChange={(e) => updatePlayer(p.id, { name: e.target.value })}
+                        placeholder="Name on back"
+                        aria-label={`Player ${i + 1} name`}
+                        className="field !py-2 min-w-0 flex-1 text-sm"
                       />
-                    </label>
+                      <input
+                        value={p.number}
+                        onChange={(e) =>
+                          updatePlayer(p.id, {
+                            number: e.target.value.replace(/[^0-9]/g, "").slice(0, 3),
+                          })
+                        }
+                        inputMode="numeric"
+                        placeholder="No."
+                        aria-label={`Player ${i + 1} number`}
+                        className="field !w-16 !py-2 shrink-0 text-center text-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removePlayer(p.id)}
+                        aria-label={`Remove player ${i + 1}`}
+                        className="grid h-10 w-10 shrink-0 place-items-center rounded-[6px] border border-line text-paper/60 transition-colors hover:border-ember hover:text-ember"
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <path d="M6 6l12 12M18 6L6 18" />
+                        </svg>
+                      </button>
+                    </li>
                   ))}
-                </div>
-                {sizesTotal > 0 && sizesTotal !== qty && (
-                  <p className="mt-1.5 text-xs text-paper/60">
-                    This adds up to {sizesTotal} — we&apos;ll confirm final sizes with
-                    you before production.
-                  </p>
-                )}
-              </div>
+                </ul>
+              )}
 
-              {/* players */}
-              <div className="border-t border-line pt-5">
-                <div className="flex items-baseline justify-between">
-                  <p className="field-label mb-0">
-                    Player names &amp; numbers{" "}
-                    <span className="text-paper/55">(optional)</span>
-                  </p>
-                  {players.length > 0 && (
-                    <p className="text-xs text-paper/60">
-                      {players.length} player{players.length === 1 ? "" : "s"}
-                    </p>
-                  )}
-                </div>
-
-                {players.length > 0 && (
-                  <ul className="mt-3 space-y-2">
-                    {players.map((p, i) => (
-                      <li key={p.id} className="flex items-center gap-2">
-                        <span className="w-6 shrink-0 text-center text-xs font-semibold text-paper/60">
-                          {i + 1}
-                        </span>
-                        <input
-                          value={p.name}
-                          onChange={(e) => updatePlayer(p.id, { name: e.target.value })}
-                          placeholder="Name on back"
-                          aria-label={`Player ${i + 1} name`}
-                          className="field !py-2 min-w-0 flex-1 text-sm"
-                        />
-                        <input
-                          value={p.number}
-                          onChange={(e) =>
-                            updatePlayer(p.id, {
-                              number: e.target.value.replace(/[^0-9]/g, "").slice(0, 3),
-                            })
-                          }
-                          inputMode="numeric"
-                          placeholder="No."
-                          aria-label={`Player ${i + 1} number`}
-                          className="field !w-16 !py-2 shrink-0 text-center text-sm"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removePlayer(p.id)}
-                          aria-label={`Remove player ${i + 1}`}
-                          className="grid h-10 w-10 shrink-0 place-items-center rounded-[6px] border border-line text-paper/60 transition-colors hover:border-ember hover:text-ember"
-                        >
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                            <path d="M6 6l12 12M18 6L6 18" />
-                          </svg>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-
-                <button
-                  type="button"
-                  onClick={addPlayer}
-                  className="mt-3 inline-flex items-center gap-2.5 rounded-[8px] border border-line-strong py-2 pl-2 pr-4 text-sm font-medium text-paper/80 transition-colors hover:border-volt hover:text-volt"
-                >
-                  <span className="grid h-6 w-6 place-items-center rounded-full bg-volt/15 text-[0.72rem] font-bold text-volt">
-                    {players.length + 1}
-                  </span>
-                  Add {players.length === 0 ? "new" : "another"} player
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={addPlayer}
+                className="mt-3 inline-flex items-center gap-2.5 rounded-[8px] border border-line-strong py-2 pl-2 pr-4 text-sm font-medium text-paper/80 transition-colors hover:border-volt hover:text-volt"
+              >
+                <span className="grid h-6 w-6 place-items-center rounded-full bg-volt/15 text-[0.72rem] font-bold text-volt">
+                  {players.length + 1}
+                </span>
+                Add {players.length === 0 ? "new" : "another"} player
+              </button>
             </div>
-          )}
+          </div>
         </div>
       </section>
 
