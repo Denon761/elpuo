@@ -11,8 +11,9 @@ interface HeroSlideshowProps {
   priority?: boolean;
 }
 
-/** Cross-fades between images. With a single image it just renders it —
- *  no timer, no transition — so it's a drop-in for a plain <Image fill>. */
+/** Slides between images horizontally. With a single image it just
+ *  renders it — no timer, no transform — so it's a drop-in for a plain
+ *  <Image fill>. */
 export function HeroSlideshow({
   images,
   alt,
@@ -32,20 +33,25 @@ export function HeroSlideshow({
   }, [images.length, intervalMs]);
 
   return (
-    <div className={`relative ${className}`}>
-      {images.map((src, i) => (
-        <Image
-          key={src}
-          src={src}
-          alt={alt}
-          fill
-          priority={priority && i === 0}
-          sizes="100vw"
-          className="object-contain object-center transition-opacity duration-1000 ease-in-out"
-          style={{ opacity: i === index ? 1 : 0 }}
-          aria-hidden={i === index ? undefined : true}
-        />
-      ))}
+    <div className={`relative overflow-hidden ${className}`}>
+      <div
+        className="flex h-full w-full transition-transform duration-700 ease-in-out"
+        style={{ transform: `translateX(-${index * 100}%)` }}
+      >
+        {images.map((src, i) => (
+          <div key={src} className="relative h-full w-full shrink-0">
+            <Image
+              src={src}
+              alt={alt}
+              fill
+              priority={priority && i === 0}
+              sizes="100vw"
+              className="object-contain object-center"
+              aria-hidden={i === index ? undefined : true}
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
