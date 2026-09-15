@@ -163,6 +163,7 @@ export default function HomePage() {
           <HeroSlideshow
             images={MOBILE_HERO_IMAGES}
             alt="Athletes across ten sports wearing custom Elpuo uniforms"
+            intervalMs={2000}
             priority
             className="aspect-[792/916] w-full sm:hidden"
           />
