@@ -77,7 +77,7 @@ function recommendedLabel(g: OptionGroup): string {
 export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup[] }) {
   const router = useRouter();
   const [selections, setSelections] = useState(() => initSelections(groups));
-  const [customizeOpen, setCustomizeOpen] = useState(false);
+  const [customizeOpen, setCustomizeOpen] = useState(true);
   const [qty, setQty] = useState<number>(MIN_ORDER_QTY);
   const [sizes, setSizes] = useState<Record<string, number>>({});
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -300,7 +300,7 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
     .join(", ");
 
   return (
-    <form onSubmit={onSubmit} className="space-y-10">
+    <form onSubmit={onSubmit} className="qform space-y-10">
       {/* honeypot — hidden from users, catches bots. Named/labelled away
           from "company"/"website"/etc: real browser autofill (Chrome's
           address/company profile) was matching that name and silently
@@ -325,7 +325,7 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
       {/* 1 — QUANTITY */}
       <section>
         <Legend n="1" title="How many do you need?" />
-        <div className="mt-5 rounded-lg border border-line-strong bg-ink-2 p-5 sm:p-6">
+        <div className="mt-5 rounded-lg border border-line-strong p-5 sm:p-6">
           <p className="text-sm text-paper/55">
             A rough headcount is enough to start — exact sizes are optional and
             come later.
@@ -392,108 +392,12 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
         </div>
       </section>
 
-      {/* 2 — DETAILS */}
+      {/* 2 — KIT */}
       <section>
-        <Legend n="2" title="Your details" />
-        <p className="mt-3 text-sm text-paper/55">
-          So we can send your {mode === "buy" ? "confirmation" : "quote and proof"}{" "}
-          back to you. We never share these or add you to a mailing list.
-        </p>
-
-        <div className="mt-5 rounded-lg border border-line-strong bg-ink-2 p-5 sm:p-6">
-          <div className="grid gap-x-4 gap-y-5 sm:grid-cols-2">
-            <Field label="Your name" required error={fieldErrors.contactName}>
-              <input
-                id="qf-contactName"
-                className={fieldCls(fieldErrors.contactName)}
-                placeholder="Alex Morgan"
-                autoComplete="name"
-                value={c.contactName}
-                onChange={setC1("contactName")}
-              />
-            </Field>
-            <Field
-              label="Email"
-              required
-              hint={
-                mode === "buy"
-                  ? "Where your receipt and order confirmation will land"
-                  : "Where your quote and digital proof will land"
-              }
-              error={fieldErrors.email}
-            >
-              <input
-                id="qf-email"
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                className={fieldCls(fieldErrors.email)}
-                placeholder="you@yourclub.com"
-                value={c.email}
-                onChange={setC1("email")}
-              />
-            </Field>
-            <Field
-              label="Country"
-              required
-              hint="Sets your shipping options and lead time"
-              error={fieldErrors.country}
-            >
-              <input
-                id="qf-country"
-                className={fieldCls(fieldErrors.country)}
-                placeholder="United Kingdom"
-                autoComplete="country-name"
-                value={c.country}
-                onChange={setC1("country")}
-              />
-            </Field>
-            <Field
-              label="Phone"
-              required
-              hint="So we can reach you quickly about your order"
-              error={fieldErrors.phone}
-            >
-              <input
-                id="qf-phone"
-                type="tel"
-                autoComplete="tel"
-                className={fieldCls(fieldErrors.phone)}
-                placeholder="+44 7700 900123"
-                value={c.phone}
-                onChange={setC1("phone")}
-              />
-            </Field>
-            <Field label="Club / organisation">
-              <input
-                id="qf-organization"
-                className={fieldCls()}
-                placeholder="Riverside Hockey Club"
-                autoComplete="organization"
-                value={c.organization}
-                onChange={setC1("organization")}
-              />
-            </Field>
-            <Field label="City">
-              <input
-                id="qf-city"
-                className={fieldCls()}
-                placeholder="Manchester"
-                autoComplete="address-level2"
-                value={c.city}
-                onChange={setC1("city")}
-              />
-            </Field>
-          </div>
-        </div>
-      </section>
-
-      {/* 3 — KIT */}
-      <section>
-        <Legend n="3" title="Your kit" />
+        <Legend n="2" title="Your kit" />
         <div className="mt-5">
           {!customizeOpen ? (
-            <div className="rounded-lg border border-line-strong bg-ink-2 p-5 sm:p-6">
+            <div className="rounded-lg border border-line-strong p-5 sm:p-6">
               <p className="text-sm text-paper/75">
                 <span className="font-semibold text-paper">
                   Not sure? We&apos;ll use our most popular setup:
@@ -509,7 +413,7 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
               </button>
             </div>
           ) : (
-            <div className="space-y-5 rounded-lg border border-line-strong bg-ink-2 p-5 sm:p-6">
+            <div className="space-y-5 rounded-lg border border-line-strong p-5 sm:p-6">
               <button
                 type="button"
                 onClick={() => setCustomizeOpen(false)}
@@ -580,9 +484,9 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
         </div>
       </section>
 
-      {/* 4 — EXTRA DETAILS (sizes + roster, both optional, both deferred) */}
+      {/* 3 — EXTRA DETAILS (sizes + roster, both optional, both deferred) */}
       <section>
-        <Legend n="4" title="Extra details" />
+        <Legend n="3" title="Quantity by size" />
         <div className="mt-5">
           {!detailsOpen ? (
             <button
@@ -593,7 +497,7 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
               + Add exact sizes, player names &amp; numbers (optional)
             </button>
           ) : (
-            <div className="space-y-6 rounded-lg border border-line-strong bg-ink-2 p-5 sm:p-6">
+            <div className="space-y-6 rounded-lg border border-line-strong p-5 sm:p-6">
               {/* exact sizes */}
               <div>
                 <div className="flex items-baseline justify-between">
@@ -708,9 +612,9 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
         </div>
       </section>
 
-      {/* 5 — REFERENCE */}
+      {/* 4 — REFERENCE */}
       <section>
-        <Legend n="5" title="Reference design" />
+        <Legend n="4" title="Reference design" />
         <div className="mt-5 space-y-4">
           <div className="flex flex-wrap gap-2" role="group" aria-label="Do you have a design?">
             <button
@@ -739,7 +643,7 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
             </button>
           </div>
 
-          <div className="space-y-4 rounded-lg border border-line-strong bg-ink-2 p-5 sm:p-6">
+          <div className="space-y-4 rounded-lg border border-line-strong p-5 sm:p-6">
           {needsDesignHelp ? (
             <p className="text-sm text-paper/70">
               No problem — add any colour or style ideas below and our studio
@@ -823,6 +727,102 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
               className="field resize-none"
             />
           </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 5 — DETAILS */}
+      <section>
+        <Legend n="5" title="Your details" />
+        <p className="mt-3 text-sm text-paper/55">
+          So we can send your {mode === "buy" ? "confirmation" : "quote and proof"}{" "}
+          back to you. We never share these or add you to a mailing list.
+        </p>
+
+        <div className="mt-5 rounded-lg border border-line-strong p-5 sm:p-6">
+          <div className="grid gap-x-4 gap-y-5 sm:grid-cols-2">
+            <Field label="Your name" required error={fieldErrors.contactName}>
+              <input
+                id="qf-contactName"
+                className={fieldCls(fieldErrors.contactName)}
+                placeholder="Alex Morgan"
+                autoComplete="name"
+                value={c.contactName}
+                onChange={setC1("contactName")}
+              />
+            </Field>
+            <Field
+              label="Email"
+              required
+              hint={
+                mode === "buy"
+                  ? "Where your receipt and order confirmation will land"
+                  : "Where your quote and digital proof will land"
+              }
+              error={fieldErrors.email}
+            >
+              <input
+                id="qf-email"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                className={fieldCls(fieldErrors.email)}
+                placeholder="you@yourclub.com"
+                value={c.email}
+                onChange={setC1("email")}
+              />
+            </Field>
+            <Field
+              label="Country"
+              required
+              hint="Sets your shipping options and lead time"
+              error={fieldErrors.country}
+            >
+              <input
+                id="qf-country"
+                className={fieldCls(fieldErrors.country)}
+                placeholder="United Kingdom"
+                autoComplete="country-name"
+                value={c.country}
+                onChange={setC1("country")}
+              />
+            </Field>
+            <Field
+              label="Phone"
+              required
+              hint="So we can reach you quickly about your order"
+              error={fieldErrors.phone}
+            >
+              <input
+                id="qf-phone"
+                type="tel"
+                autoComplete="tel"
+                className={fieldCls(fieldErrors.phone)}
+                placeholder="+44 7700 900123"
+                value={c.phone}
+                onChange={setC1("phone")}
+              />
+            </Field>
+            <Field label="Club / organisation">
+              <input
+                id="qf-organization"
+                className={fieldCls()}
+                placeholder="Riverside Hockey Club"
+                autoComplete="organization"
+                value={c.organization}
+                onChange={setC1("organization")}
+              />
+            </Field>
+            <Field label="City">
+              <input
+                id="qf-city"
+                className={fieldCls()}
+                placeholder="Manchester"
+                autoComplete="address-level2"
+                value={c.city}
+                onChange={setC1("city")}
+              />
+            </Field>
           </div>
         </div>
       </section>

@@ -150,18 +150,27 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* full-width hero image — zoomed crop on mobile, full lineup on desktop */}
+        {/* full-width hero image — shown in full at its native ratio, no crop */}
         <Reveal delay={120} className="relative mt-14 md:mt-20">
-          <div className="relative aspect-[4/5] w-full sm:aspect-[16/9] md:aspect-[2575/823]">
+          <div className="relative aspect-[792/916] w-full sm:hidden">
+            <Image
+              src="/hero-mobile.jpg"
+              alt="Athletes across ten sports wearing custom Elpuo uniforms"
+              fill
+              priority
+              sizes="100vw"
+              className="object-contain object-center"
+            />
+          </div>
+          <div className="relative hidden aspect-[2575/823] w-full sm:block">
             <Image
               src="/hero.jpg"
               alt="Athletes across ten sports wearing custom Elpuo uniforms"
               fill
               priority
               sizes="100vw"
-              className="object-cover object-center"
+              className="object-contain object-center"
             />
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-ink to-transparent" />
           </div>
         </Reveal>
 

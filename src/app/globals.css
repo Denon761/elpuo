@@ -299,6 +299,16 @@ h1, h2, h3, h4 {
     outline-offset: 2px;
   }
 
+  /* Quote form — flatten the grey field/card fills to white so the form
+     reads as one clean surface instead of nested grey boxes. */
+  .qform .field {
+    background: var(--color-ink);
+    border-color: var(--color-line-strong);
+  }
+  .qform .field:focus {
+    background: var(--color-ink);
+  }
+
   .field-label {
     display: block;
     font-size: 0.76rem;
