@@ -287,7 +287,7 @@ export function QuoteForm({ sport, fabric }: { sport: Sport; fabric: OptionGroup
                 </p>
               </div>
               <div
-                className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3"
+                className="mt-3 grid grid-cols-1 gap-2 min-[400px]:grid-cols-2 sm:grid-cols-3"
                 role="group"
                 aria-labelledby="grp-sizes"
               >
