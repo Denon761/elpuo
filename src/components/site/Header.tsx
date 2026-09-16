@@ -56,17 +56,15 @@ export function Header() {
       }`}
     >
       <div className="container-x flex h-16 items-center justify-between gap-6 md:h-20">
-        <Link href="/" aria-label="Elpuo home" className="inline-flex shrink-0">
-          <span className="inline-flex items-center rounded-lg bg-[#f5f4ef] px-2.5 py-1.5">
-            <Image
-              src="/logo.png"
-              alt="Elpuo"
-              width={497}
-              height={246}
-              priority
-              className="h-6 w-auto md:h-7"
-            />
-          </span>
+        <Link href="/" aria-label="Elpuo home" className="inline-flex shrink-0 items-center">
+          <Image
+            src="/logo.png"
+            alt="Elpuo"
+            width={497}
+            height={246}
+            priority
+            className="h-8 w-auto md:h-10"
+          />
         </Link>
 
         <nav className="hidden items-center gap-8 lg:flex">

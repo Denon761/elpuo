@@ -32,7 +32,7 @@ function pics(slug: string, variants: ImgVariant[] = ["men", "women", "kid"]) {
   }));
 }
 
-export const SPORTS: Sport[] = [
+const SPORTS_DATA: Sport[] = [
   {
     slug: "handball",
     name: "Handball",
@@ -456,6 +456,15 @@ export const SPORTS: Sport[] = [
     hue: "#1d4ed8",
     images: pics("football"),
   },
+];
+
+/** Baseball, Soccer, Hockey and Basketball lead every sports listing on the
+ *  site; the rest keep their original catalogue order after them. */
+const FEATURED_ORDER = ["baseball", "soccer", "hockey", "basketball"];
+
+export const SPORTS: Sport[] = [
+  ...FEATURED_ORDER.map((slug) => SPORTS_DATA.find((s) => s.slug === slug)!),
+  ...SPORTS_DATA.filter((s) => !FEATURED_ORDER.includes(s.slug)),
 ];
 
 export function getSport(slug: string): Sport | undefined {

@@ -204,7 +204,11 @@ export function QuoteForm({ sport, fabric }: { sport: Sport; fabric: OptionGroup
   async function onSubmit(ev: React.FormEvent) {
     ev.preventDefault();
     if (status === "sending") return;
-    if (!validate()) return;
+    if (!validate()) {
+      setStatus("error");
+      setErrorMsg("Please fill in the highlighted fields before submitting.");
+      return;
+    }
 
     const fd = buildFormData();
     setStatus("sending");
@@ -231,9 +235,13 @@ export function QuoteForm({ sport, fabric }: { sport: Sport; fabric: OptionGroup
     return (
       <div className="rounded-lg border border-gray-200 bg-white p-8 text-black" role="status">
         <p className="text-sm font-medium text-gray-500">Request received</p>
-        <h2 className="mt-2 font-sans text-2xl font-semibold normal-case leading-snug tracking-normal text-black">
+        <p
+          role="heading"
+          aria-level={2}
+          className="mt-2 text-2xl font-semibold text-black"
+        >
           Thanks, {c.contactName.split(" ")[0] || "there"}.
-        </h2>
+        </p>
         <p className="mt-3 text-gray-600">Taking you to your confirmation…</p>
       </div>
     );
@@ -643,20 +651,19 @@ export function QuoteForm({ sport, fabric }: { sport: Sport; fabric: OptionGroup
         </div>
       </section>
 
-      {status === "error" && (
-        <p
-          role="alert"
-          className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
-        >
-          {errorMsg}
-        </p>
-      )}
-
       <div>
+        {status === "error" && (
+          <p
+            role="alert"
+            className="mb-4 rounded-md border border-red-300 bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700"
+          >
+            {errorMsg}
+          </p>
+        )}
         <button
           type="submit"
           disabled={status === "sending" || isUploading}
-          className="w-full rounded-md bg-black px-6 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-gray-800 disabled:opacity-50 sm:w-auto sm:px-10"
+          className="w-full rounded-md bg-[#f26a21] px-6 py-3.5 text-sm font-semibold text-black transition-colors hover:bg-[#e0601c] disabled:opacity-50 sm:w-auto sm:px-10"
         >
           {status === "sending"
             ? "Sending…"
@@ -674,9 +681,9 @@ function Legend({ n, title }: { n: string; title: string }) {
   return (
     <div className="flex items-baseline gap-2 border-b border-gray-200 pb-2">
       <span className="text-sm font-medium text-gray-400">{n}.</span>
-      <h2 className="font-sans text-xl font-semibold normal-case leading-snug tracking-normal text-black sm:text-2xl">
+      <p role="heading" aria-level={3} className="text-xl font-semibold text-black sm:text-2xl">
         {title}
-      </h2>
+      </p>
     </div>
   );
 }
