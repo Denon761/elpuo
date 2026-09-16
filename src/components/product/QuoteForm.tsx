@@ -250,7 +250,7 @@ export function QuoteForm({ sport, fabric }: { sport: Sport; fabric: OptionGroup
   return (
     <form
       onSubmit={onSubmit}
-      className="space-y-8 rounded-lg border border-gray-200 bg-white p-5 text-black sm:p-8"
+      className="space-y-8 bg-white text-black"
     >
       {/* honeypot — hidden from users, catches bots. Named/labelled away
           from "company"/"website"/etc: real browser autofill (Chrome's
@@ -287,37 +287,39 @@ export function QuoteForm({ sport, fabric }: { sport: Sport; fabric: OptionGroup
                 </p>
               </div>
               <div
-                className="mt-3 flex flex-wrap gap-2"
+                className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3"
                 role="group"
                 aria-labelledby="grp-sizes"
               >
                 {SIZES.map((s) => (
                   <div
                     key={s}
-                    className="flex items-center gap-1.5 rounded-md border border-gray-300 px-2 py-1.5"
+                    className="flex w-full items-center justify-between gap-1.5 rounded-md border border-gray-300 px-2.5 py-1.5"
                   >
-                    <span className="w-8 text-center text-xs font-medium text-gray-600">
+                    <span className="text-xs font-medium text-gray-600">
                       {s}
                     </span>
-                    <button
-                      type="button"
-                      aria-label={`Decrease size ${s} quantity`}
-                      onClick={() => bumpSize(s, -1)}
-                      className={stepBtn}
-                    >
-                      −
-                    </button>
-                    <span className="w-5 text-center text-sm tabular-nums text-black">
-                      {sizes[s] ?? 0}
-                    </span>
-                    <button
-                      type="button"
-                      aria-label={`Increase size ${s} quantity`}
-                      onClick={() => bumpSize(s, 1)}
-                      className={stepBtn}
-                    >
-                      +
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        aria-label={`Decrease size ${s} quantity`}
+                        onClick={() => bumpSize(s, -1)}
+                        className={stepBtn}
+                      >
+                        −
+                      </button>
+                      <span className="w-5 text-center text-sm tabular-nums text-black">
+                        {sizes[s] ?? 0}
+                      </span>
+                      <button
+                        type="button"
+                        aria-label={`Increase size ${s} quantity`}
+                        onClick={() => bumpSize(s, 1)}
+                        className={stepBtn}
+                      >
+                        +
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
