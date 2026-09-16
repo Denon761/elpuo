@@ -14,31 +14,31 @@ const PHASES = [
   {
     n: "01",
     t: "Tell us roughly what you need",
-    d: "Open any sport and start with just an approximate quantity and your contact details — nothing technical yet. We pre-select our most popular fabric, decoration and names-and-numbers setup for you.",
+    d: "Open any sport and start with just an approximate quantity, a size breakdown and your fabric pick — nothing technical required yet.",
     points: [
       "Just a rough headcount to start — exact sizes are optional",
-      "Recommended options are pre-picked; customize only if you want to",
-      "Not sure on a choice? One click sets it to our pick",
+      "Size grid from YS to 3XL, with simple plus/minus counters",
+      "Pick a fabric, then let us know how soon you need it",
     ],
   },
   {
     n: "02",
-    t: "Add design & sizes",
-    d: "Upload the design you have in mind — a sketch, a mockup or print-ready files — or tell us you don't have one yet and need design help. Add player names, numbers and an exact size breakdown if you have them.",
+    t: "Add design & delivery timeline",
+    d: "Upload the design you have in mind — a sketch, a mockup or print-ready files — or tell us you don't have one yet and need design help. Let us know if you're after 1 week, 2 weeks or a month.",
     points: [
       "No design yet? Flag it and our studio helps you create one",
-      "Size grid from YS to 3XL, entirely optional at this stage",
       "Attach PNG, JPG, PDF, AI or EPS up to 8 MB",
+      "Choose an estimated delivery window that fits your deadline",
     ],
   },
   {
     n: "03",
-    t: "Check out or get a quote",
-    d: "Orders under 30 units see live pricing and pay securely on the spot. Larger orders submit for a free quote instead — nothing charged. " +
+    t: "Get your free quote",
+    d: "Add your name, email, phone and country and submit — there's no payment on the site. Our sales team reviews every detail and sends back a firm quote. " +
       REPLY_TIMELINE,
     points: [
-      "Under 30 units: instant pricing, pay on-site",
-      "30+ units: no payment — a specialist quotes it for you",
+      "No payment gateway — every request goes to a specialist",
+      "The price shown on each sport page is an estimate only",
       "Nothing prints without your written approval",
     ],
   },

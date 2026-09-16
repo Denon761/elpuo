@@ -3,10 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { QuoteForm } from "@/components/product/QuoteForm";
-import { TrustStrip } from "@/components/product/TrustStrip";
 import { JsonLd } from "@/components/site/JsonLd";
 import { Reveal } from "@/components/site/Reveal";
-import { MIN_ORDER_QTY, SPORTS, getSport, groupsFor } from "@/lib/catalog";
+import { FABRIC, MIN_ORDER_QTY, SPORTS, getSport } from "@/lib/catalog";
 import { usd } from "@/lib/format";
 import { abs, FACTS, ORG } from "@/lib/site";
 
@@ -56,7 +55,6 @@ export default async function SportPage({
   const sport = getSport(slug);
   if (!sport) notFound();
 
-  const groups = groupsFor(sport);
   const related = SPORTS.filter((s) => s.slug !== sport.slug).slice(0, 5);
   const path = `/sports/${sport.slug}`;
 
@@ -77,7 +75,7 @@ export default async function SportPage({
     },
     {
       h: "Minimum order & pricing",
-      p: `Minimum ${MIN_ORDER_QTY} units per order, mixed sizes allowed. The "from" price is indicative per unit; your firm quote depends on fabric, decoration and quantity.`,
+      p: `Minimum ${MIN_ORDER_QTY} units per order, mixed sizes allowed. The "from" price is indicative per unit; your firm quote depends on fabric and quantity, and is confirmed by our sales team.`,
     },
   ];
 
@@ -176,8 +174,27 @@ export default async function SportPage({
         <div className="container-x grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,520px)]">
           <ProductGallery sport={sport} />
           <div className="min-w-0">
-            <TrustStrip />
-            <QuoteForm sport={sport} groups={groups} />
+            <div className="mb-8">
+              <h2 className="display-3 text-2xl sm:text-3xl">
+                Custom {sport.name} Uniform
+              </h2>
+              <p className="mt-2 text-paper/65">{sport.tagline}</p>
+
+              <div className="mt-5 rounded-lg border border-volt/40 bg-volt/5 p-5">
+                <p className="kicker text-volt">Starting from</p>
+                <p className="mt-1 font-display text-3xl text-paper">
+                  {usd(sport.unitBase)} <span className="text-base font-normal text-paper/60">/ unit</span>
+                </p>
+                <p className="mt-2 text-xs leading-relaxed text-paper/60">
+                  This price is an estimate with limited customization. Your
+                  final total will be shared by our sales team after
+                  reviewing your quote — it may increase or decrease based on
+                  your requirements.
+                </p>
+              </div>
+            </div>
+
+            <QuoteForm sport={sport} fabric={FABRIC} />
           </div>
         </div>
       </section>

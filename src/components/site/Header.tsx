@@ -135,7 +135,7 @@ export function Header() {
             href="/sports"
             className="hidden rounded-[8px] bg-lime px-4 py-2.5 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-volt-ink transition-opacity hover:opacity-90 sm:inline-flex"
           >
-            Get a quote
+            Request a Quote
           </Link>
 
           <button
@@ -183,6 +183,12 @@ export function Header() {
               </Link>
             ))}
           </nav>
+          <Link
+            href="/sports"
+            className="mt-6 flex w-full items-center justify-center rounded-[8px] bg-lime px-4 py-3.5 text-[0.72rem] font-semibold uppercase tracking-[0.12em] text-volt-ink transition-opacity hover:opacity-90"
+          >
+            Request a Quote
+          </Link>
           <p className="kicker mt-8 text-paper/60">Jump to a sport</p>
           <div className="mt-3 grid grid-cols-2 gap-2">
             {SPORTS.map((s) => (

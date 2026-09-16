@@ -6,7 +6,6 @@ import { MarqueeStrip } from "@/components/site/MarqueeStrip";
 import { Reveal } from "@/components/site/Reveal";
 import { HeroSlideshow } from "@/components/site/HeroSlideshow";
 import { SportCard } from "@/components/site/SportCard";
-import { BULK_THRESHOLD } from "@/lib/pricing";
 import { MIN_ORDER_QTY, SPORTS } from "@/lib/catalog";
 import { abs, FACTS } from "@/lib/site";
 
@@ -35,8 +34,8 @@ const STEPS = [
   },
   {
     n: "04",
-    title: "Check out or get a quote",
-    body: `Orders under ${BULK_THRESHOLD} units see live pricing and pay on the spot. Larger orders get a free quote from our studio — nothing charged.`,
+    title: "Get your free quote",
+    body: "Our sales team reviews every detail and sends a firm quote to your inbox — nothing charged on the website.",
   },
 ];
 
@@ -55,7 +54,7 @@ const FEATURES = [
   },
   {
     title: "One simple request",
-    body: `Tell us roughly what you need. Small orders (under ${BULK_THRESHOLD} units) check out instantly; larger orders get a firm quote from a specialist.`,
+    body: "Tell us roughly what you need and our sales team sends back a firm quote — no payment on the site, nothing charged upfront.",
   },
 ];
 
@@ -73,11 +72,11 @@ const FAQS = [
   },
   {
     q: "How do I customise the kit?",
-    a: "On each sport page we pre-select our most popular fabric, decoration method, kit pieces and options for you. You can customise any of it, add a size breakdown and player names and numbers, then add your design. It's one short request.",
+    a: "On each sport page, pick your fabric, quantity and sizes, add a size breakdown and player names and numbers, then add your design. It's one short request.",
   },
   {
     q: "Do I pay on the website?",
-    a: `Depends on quantity. Orders under ${BULK_THRESHOLD} units see live pricing and pay securely on the spot. Orders of ${BULK_THRESHOLD}+ units skip payment — you submit a free quote request and our team sends a firm quote and invoice instead.`,
+    a: "No — there's no payment gateway on the site. Every request goes to our sales team, who review your details and send back a firm quote and invoice by email.",
   },
   {
     q: "Can I upload my own design?",
@@ -141,8 +140,8 @@ export default function HomePage() {
             <Reveal delay={120}>
               <p className="mx-auto mt-6 max-w-2xl text-lg text-paper/65 md:text-xl">
                 Tell us roughly what you need and we&apos;ll handle the
-                complicated part — small orders check out instantly, bigger
-                orders get a free quote.
+                complicated part — every request gets a free quote from our
+                sales team, nothing charged on the site.
               </p>
             </Reveal>
             <Reveal delay={180}>
@@ -307,8 +306,8 @@ export default function HomePage() {
                 Your kit is <span className="text-lime">10 minutes</span> away
               </h2>
               <p className="mt-4 max-w-md text-paper/65">
-                Start with any sport. Small orders check out instantly at a live
-                price — bigger orders get a free quote, nothing charged.
+                Start with any sport. Submit your request and our sales team
+                sends back a free quote — nothing charged on the site.
               </p>
             </div>
             <ButtonLink href="/sports" size="lg" className="shrink-0">

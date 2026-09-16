@@ -14,56 +14,35 @@ const CONTACT_EMAIL = ORG.email;
 export default async function ThankYouPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ref?: string; sport?: string; paid?: string }>;
+  searchParams: Promise<{ ref?: string; sport?: string }>;
 }) {
-  const { ref, sport: slug, paid } = await searchParams;
+  const { ref, sport: slug } = await searchParams;
   const sport = slug ? getSport(slug) : undefined;
-  const isPaid = paid === "1";
 
   return (
     <section className="noise relative grid min-h-dvh place-items-center overflow-hidden bg-ink px-6 py-28 text-center">
       <div className="grid-lines pointer-events-none absolute inset-0 opacity-25" />
       <div className="relative max-w-xl">
-        <p className="kicker text-volt">
-          {isPaid ? "Payment received" : "Request received"}
-        </p>
+        <p className="kicker text-volt">Request received</p>
         <h1 className="display-1 mt-3">Thank you</h1>
 
-        {isPaid ? (
-          <p className="mt-5 text-lg text-paper/65">
-            Your {sport ? `${sport.name.toLowerCase()} ` : ""}order is confirmed
-            {ref ? (
-              <>
-                {" "}
-                under reference <strong className="text-paper">{ref}</strong>
-              </>
-            ) : null}
-            . A specialist will confirm your exact sizes and get it on the print
-            floor — production runs roughly {FACTS.productionDays} working days
-            after that.
-          </p>
-        ) : (
-          <p className="mt-5 text-lg text-paper/65">
-            Your {sport ? `${sport.name.toLowerCase()} ` : ""}kit request is with our
-            studio
-            {ref ? (
-              <>
-                {" "}
-                under reference{" "}
-                <strong className="text-paper">{ref}</strong>
-              </>
-            ) : null}
-            . A specialist will reply within {FACTS.quoteReplyDays} business day
-            with a firm quote — a full digital proof follows within{" "}
-            {FACTS.proofDays} business days.
-          </p>
-        )}
+        <p className="mt-5 text-lg text-paper/65">
+          Your {sport ? `${sport.name.toLowerCase()} ` : ""}kit request is with our
+          studio
+          {ref ? (
+            <>
+              {" "}
+              under reference{" "}
+              <strong className="text-paper">{ref}</strong>
+            </>
+          ) : null}
+          . A specialist will reply within {FACTS.quoteReplyDays} business day
+          with a firm quote — a full digital proof follows within{" "}
+          {FACTS.proofDays} business days.
+        </p>
 
         <p className="mt-4 text-sm text-paper/60">
-          {isPaid
-            ? "A receipt is on its way to your inbox."
-            : "Nothing has been charged."}{" "}
-          Questions? Email{" "}
+          Nothing has been charged. Questions? Email{" "}
           <a href={`mailto:${CONTACT_EMAIL}`} className="text-volt link-underline">
             {CONTACT_EMAIL}
           </a>

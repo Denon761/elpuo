@@ -466,35 +466,6 @@ export function getSport(slug: string): Sport | undefined {
    Option groups. Some are shaped by the sport silhouette.
  * ------------------------------------------------------------------ */
 
-export const DESIGN_METHOD: OptionGroup = {
-  id: "method",
-  label: "Decoration method",
-  helper: "How the colours and graphics get onto the fabric.",
-  type: "single",
-  defaultValue: "sublimation",
-  options: [
-    {
-      id: "screenprint",
-      label: "Screen print",
-      delta: 0,
-      desc: "Solid team colour body with printed logos. Best value for simple designs.",
-    },
-    {
-      id: "sublimation",
-      label: "Full sublimation",
-      delta: 6,
-      recommended: true,
-      desc: "Edge-to-edge dye print. Unlimited colours, patterns and gradients, zero weight added.",
-    },
-    {
-      id: "cutsew",
-      label: "Cut & sew",
-      delta: 18,
-      desc: "Panels dyed then stitched — pro-grade construction and contrast piping.",
-    },
-  ],
-};
-
 export const FABRIC: OptionGroup = {
   id: "fabric",
   label: "Fabric",
@@ -518,24 +489,6 @@ export const FABRIC: OptionGroup = {
   ],
 };
 
-export const KIT: OptionGroup = {
-  id: "kit",
-  label: "Top, bottom or both",
-  type: "single",
-  defaultValue: "both",
-  options: [
-    { id: "top", label: "Top only", delta: -4, desc: "Just the jersey / shirt." },
-    { id: "bottom", label: "Bottom only", delta: -2, desc: "Just the shorts." },
-    {
-      id: "both",
-      label: "Both — top & bottom",
-      delta: 0,
-      recommended: true,
-      desc: "Full jersey and shorts set — the price shown on this page.",
-    },
-  ],
-};
-
 export const FIT: OptionGroup = {
   id: "fit",
   label: "Fit block",
@@ -548,37 +501,6 @@ export const FIT: OptionGroup = {
     { id: "youth", label: "Youth block", delta: -4, desc: "Sizes YXS–YXL." },
   ],
 };
-
-export const TECHNIQUE: OptionGroup = {
-  id: "technique",
-  label: "Names, numbers & badges",
-  helper: "Application method for player identification and team crests.",
-  type: "single",
-  defaultValue: "heat",
-  options: [
-    { id: "heat", label: "Heat-applied vinyl", delta: 0, recommended: true, desc: "Clean, light, quick turnaround." },
-    { id: "twill", label: "Tackle twill (sewn)", delta: 9, desc: "Layered stitched fabric letters — the pro look." },
-    { id: "embroidery", label: "Embroidered", delta: 13, desc: "Raised thread crests and nameplates." },
-  ],
-};
-
-export const EXTRAS: OptionGroup = {
-  id: "extras",
-  label: "Add-ons",
-  type: "multi",
-  defaultValue: ["crest"],
-  options: [
-    { id: "crest", label: "Team crest / logo", delta: 5, recommended: true, desc: "Your badge, digitised and placed." },
-    { id: "captain", label: "Captain's armband", delta: 6 },
-    { id: "necktag", label: "Custom inner neck tag", delta: 3 },
-    { id: "bag", label: "Matching matchday bag", delta: 14 },
-  ],
-};
-
-/** Ordered option groups shown in the quote form — kept deliberately short. */
-export function groupsFor(_sport: Sport): OptionGroup[] {
-  return [FABRIC, DESIGN_METHOD, KIT, TECHNIQUE, EXTRAS];
-}
 
 /** Sizes offered in the quantity breakdown. */
 export const SIZES = ["YS", "YM", "YL", "XS", "S", "M", "L", "XL", "2XL", "3XL"];

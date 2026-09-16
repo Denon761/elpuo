@@ -3,8 +3,7 @@ export type Silhouette = "tee" | "tank" | "polo" | "longsleeve";
 export interface Option {
   id: string;
   label: string;
-  /** Per-unit price delta added on top of the sport's base price — used for
-   *  live pricing on small (buy-now) orders. See src/lib/pricing.ts. */
+  /** Per-unit price delta over the sport's base price — informational only. */
   delta: number;
   desc?: string;
   recommended?: boolean;
@@ -74,18 +73,13 @@ export interface Sport {
 export interface QuoteFields {
   sport: string;
   fabric: string;
-  method: string;
-  kit: string;
-  technique: string;
-  extras: string[];
   sizes: Record<string, number>;
   totalQty: number;
   roster: string;
+  delivery: string;
   designNotes: string;
-  organization: string;
   contactName: string;
   email: string;
   phone: string;
   country: string;
-  city: string;
 }

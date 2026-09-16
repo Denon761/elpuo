@@ -11,24 +11,31 @@ import {
   type ReactElement,
 } from "react";
 import { MIN_ORDER_QTY, SIZES } from "@/lib/catalog";
-import { EmbeddedPayment } from "@/components/product/EmbeddedPayment";
-import { usd } from "@/lib/format";
-import { BULK_THRESHOLD, priceForQty } from "@/lib/pricing";
-import { FACTS, QUOTE_TRUST_LINE } from "@/lib/site";
+import { QUOTE_TRUST_LINE } from "@/lib/site";
 import { useUploadThing } from "@/lib/uploadthing";
 import type { OptionGroup, Sport } from "@/lib/types";
 
 const MAX_FILE_MB = 8;
 
-const QTY_CHIPS = [
-  { label: "1–10", value: 5 },
-  { label: "11–20", value: 15 },
-  { label: "21–29", value: 25 },
-  { label: `${BULK_THRESHOLD}+`, value: BULK_THRESHOLD },
+const DELIVERY_OPTIONS = [
+  { id: "1week", label: "Within 1 week", desc: "Rush" },
+  { id: "2weeks", label: "Within 2 weeks", desc: "Standard" },
+  { id: "1month", label: "Within 1 month", desc: "Extended" },
 ];
 
+/* Plain, classic form styling — deliberately not the site's branded look,
+   so the buying form reads as a normal, familiar form: white background,
+   black text, regular-weight headings, ordinary bordered inputs. */
+const inputBase =
+  "w-full rounded-md border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-black placeholder:text-gray-400 transition-colors focus:border-black focus:outline-none focus:ring-1 focus:ring-black";
 const fieldCls = (err?: string) =>
-  `field ${err ? "!border-ember !bg-ember/5" : ""}`;
+  `${inputBase} ${err ? "border-red-500 bg-red-50" : ""}`;
+const pillBase = "rounded-md border px-3.5 py-2 text-sm transition-colors";
+const pillOn = "border-black bg-black text-white";
+const pillOff = "border-gray-300 text-black hover:border-gray-400";
+const stepBtn =
+  "grid h-8 w-8 shrink-0 place-items-center rounded-md border border-gray-300 text-sm text-black transition-colors hover:border-black";
+const cardCls = "rounded-md border border-gray-300 bg-white p-5 sm:p-6";
 
 type Status = "idle" | "sending" | "sent" | "error";
 
@@ -48,39 +55,12 @@ function serializeRoster(players: Player[]): string {
     .join("\n");
 }
 
-function initSelections(groups: OptionGroup[]) {
-  const s: Record<string, string | string[]> = {};
-  for (const g of groups) {
-    s[g.id] = Array.isArray(g.defaultValue) ? [...g.defaultValue] : g.defaultValue;
-  }
-  return s;
-}
-
-/** The recommended pick for a group, as shown in copy and used by the
- *  "not sure" reset action. */
-function recommendedId(g: OptionGroup): string | string[] {
-  if (g.type === "multi") return Array.isArray(g.defaultValue) ? g.defaultValue : [];
-  return g.options.find((o) => o.recommended)?.id ?? (g.defaultValue as string);
-}
-
-function recommendedLabel(g: OptionGroup): string {
-  const id = recommendedId(g);
-  if (Array.isArray(id)) {
-    return g.options
-      .filter((o) => id.includes(o.id))
-      .map((o) => o.label)
-      .join(", ");
-  }
-  return g.options.find((o) => o.id === id)?.label ?? "";
-}
-
-export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup[] }) {
+export function QuoteForm({ sport, fabric }: { sport: Sport; fabric: OptionGroup }) {
   const router = useRouter();
-  const [selections, setSelections] = useState(() => initSelections(groups));
-  const [customizeOpen, setCustomizeOpen] = useState(true);
-  const [qty, setQty] = useState<number>(MIN_ORDER_QTY);
+  const [fabricId, setFabricId] = useState<string>(fabric.defaultValue as string);
   const [sizes, setSizes] = useState<Record<string, number>>({});
   const [players, setPlayers] = useState<Player[]>([]);
+  const [delivery, setDelivery] = useState<string>("2weeks");
   const [needsDesignHelp, setNeedsDesignHelp] = useState(false);
   const [designNotes, setDesignNotes] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -88,16 +68,13 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
   const [referenceUrl, setReferenceUrl] = useState<string | null>(null);
 
   const [c, setC] = useState({
-    organization: "",
     contactName: "",
     email: "",
     phone: "",
     country: "",
-    city: "",
   });
 
   const [status, setStatus] = useState<Status>("idle");
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const fileInput = useRef<HTMLInputElement>(null);
@@ -124,30 +101,15 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
     },
   });
 
-  const mode: "buy" | "quote" = qty < BULK_THRESHOLD ? "buy" : "quote";
-
   const sizesTotal = useMemo(
     () => Object.values(sizes).reduce((a, b) => a + (Number(b) || 0), 0),
     [sizes]
   );
 
-  const quote = useMemo(
-    () => priceForQty(sport, selections, Math.max(qty, 1)),
-    [sport, selections, qty]
-  );
+  function bumpSize(size: string, delta: number) {
+    setSizes((p) => ({ ...p, [size]: Math.max(0, (p[size] ?? 0) + delta) }));
+  }
 
-  function setSingle(groupId: string, value: string) {
-    setSelections((s) => ({ ...s, [groupId]: value }));
-  }
-  function toggleMulti(groupId: string, id: string) {
-    setSelections((s) => {
-      const cur = Array.isArray(s[groupId]) ? (s[groupId] as string[]) : [];
-      return {
-        ...s,
-        [groupId]: cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id],
-      };
-    });
-  }
   function setC1(key: keyof typeof c) {
     return (e: React.ChangeEvent<HTMLInputElement>) =>
       setC((p) => ({ ...p, [key]: e.target.value }));
@@ -188,7 +150,8 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
 
   function validate() {
     const e: Record<string, string> = {};
-    if (qty < MIN_ORDER_QTY) e.qty = `Minimum order is ${MIN_ORDER_QTY} units`;
+    if (sizesTotal < MIN_ORDER_QTY)
+      e.sizes = `Minimum order is ${MIN_ORDER_QTY} units`;
     if (!c.contactName.trim()) e.contactName = "Required";
     if (!c.email.trim()) e.email = "Required";
     else if (!/.+@.+\..+/.test(c.email)) e.email = "Enter a valid email";
@@ -203,7 +166,7 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
     // Move focus to the first field in error so screen-reader and keyboard
     // users are taken straight to what needs fixing.
     const firstError =
-      (["qty", "contactName", "email", "phone", "country"] as const).find((k) => e[k]) ??
+      (["sizes", "contactName", "email", "phone", "country"] as const).find((k) => e[k]) ??
       (e.file ? "file" : undefined);
     if (firstError) {
       const el =
@@ -220,22 +183,17 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
     fd.set("company", honeypot.current);
     fd.set("t", String(renderedAt.current));
     fd.set("sport", sport.slug);
-    fd.set("fabric", String(selections.fabric ?? ""));
-    fd.set("method", String(selections.method ?? ""));
-    fd.set("kit", String(selections.kit ?? ""));
-    fd.set("technique", String(selections.technique ?? ""));
-    for (const id of (selections.extras as string[]) ?? []) fd.append("extras", id);
-    fd.set("qty", String(qty));
+    fd.set("fabric", fabricId);
+    fd.set("qty", String(sizesTotal));
     fd.set("sizes", JSON.stringify(sizes));
     fd.set("roster", serializeRoster(players));
+    fd.set("delivery", delivery);
     fd.set("designHelp", needsDesignHelp ? "yes" : "");
     fd.set("designNotes", designNotes);
-    fd.set("organization", c.organization);
     fd.set("contactName", c.contactName);
     fd.set("email", c.email);
     fd.set("phone", c.phone);
     fd.set("country", c.country);
-    fd.set("city", c.city);
     if (!needsDesignHelp && referenceUrl) {
       fd.set("referenceUrl", referenceUrl);
       if (file) fd.set("referenceName", file.name);
@@ -252,17 +210,9 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
     setStatus("sending");
     setErrorMsg("");
     try {
-      const res = await fetch(mode === "buy" ? "/api/checkout" : "/api/quote", {
-        method: "POST",
-        body: fd,
-      });
+      const res = await fetch("/api/quote", { method: "POST", body: fd });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.ok) {
-        if (mode === "buy" && data.clientSecret) {
-          setClientSecret(data.clientSecret);
-          setStatus("idle");
-          return;
-        }
         setStatus("sent");
         const params = new URLSearchParams({ sport: sport.slug });
         if (data.ref) params.set("ref", data.ref);
@@ -277,29 +227,23 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
     }
   }
 
-  if (clientSecret) {
-    return <EmbeddedPayment clientSecret={clientSecret} onClose={() => setClientSecret(null)} />;
-  }
-
   if (status === "sent") {
     return (
-      <div className="rounded-lg border border-volt/50 bg-volt/10 p-8" role="status">
-        <p className="kicker text-volt">Request received</p>
-        <h2 className="display-3 mt-3 text-2xl">
+      <div className="rounded-lg border border-gray-200 bg-white p-8 text-black" role="status">
+        <p className="text-sm font-medium text-gray-500">Request received</p>
+        <h2 className="mt-2 font-sans text-2xl font-semibold normal-case leading-snug tracking-normal text-black">
           Thanks, {c.contactName.split(" ")[0] || "there"}.
         </h2>
-        <p className="mt-3 text-paper/70">Taking you to your confirmation…</p>
+        <p className="mt-3 text-gray-600">Taking you to your confirmation…</p>
       </div>
     );
   }
 
-  const recommendedSummary = groups
-    .map((g) => recommendedLabel(g))
-    .filter(Boolean)
-    .join(", ");
-
   return (
-    <form onSubmit={onSubmit} className="qform space-y-10">
+    <form
+      onSubmit={onSubmit}
+      className="space-y-8 rounded-lg border border-gray-200 bg-white p-5 text-black sm:p-8"
+    >
       {/* honeypot — hidden from users, catches bots. Named/labelled away
           from "company"/"website"/etc: real browser autofill (Chrome's
           address/company profile) was matching that name and silently
@@ -321,225 +265,75 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
         />
       </div>
 
-      {/* 1 — QUANTITY */}
+      {/* 1 — QUANTITY BY SIZE */}
       <section>
         <Legend n="1" title="How many do you need?" />
-        <div className="mt-5 rounded-lg border border-line-strong p-5 sm:p-6">
-          <p className="text-sm text-paper/55">
-            A rough headcount is enough to start — exact sizes are optional and
-            come later.
-          </p>
-
-          <div className="mt-4 flex items-center gap-3">
-            <button
-              type="button"
-              aria-label="Decrease quantity"
-              onClick={() => setQty((q) => Math.max(1, q - 1))}
-              className="grid h-11 w-11 shrink-0 place-items-center rounded-[8px] border border-line-strong text-lg text-paper/70 transition-colors hover:border-volt hover:text-volt"
-            >
-              −
-            </button>
-            <input
-              id="qf-qty"
-              type="number"
-              min={1}
-              inputMode="numeric"
-              aria-label="Exact quantity"
-              aria-invalid={fieldErrors.qty ? true : undefined}
-              aria-describedby={fieldErrors.qty ? "err-qty" : undefined}
-              value={qty}
-              onChange={(e) => setQty(Math.max(0, Number(e.target.value) || 0))}
-              className={`${fieldCls(fieldErrors.qty)} !w-24 text-center font-display text-xl`}
-            />
-            <button
-              type="button"
-              aria-label="Increase quantity"
-              onClick={() => setQty((q) => q + 1)}
-              className="grid h-11 w-11 shrink-0 place-items-center rounded-[8px] border border-line-strong text-lg text-paper/70 transition-colors hover:border-volt hover:text-volt"
-            >
-              +
-            </button>
-            <span className="text-sm text-paper/60">units total</span>
-          </div>
-
-          {fieldErrors.qty && (
-            <p id="err-qty" role="alert" className="mt-2 text-xs font-medium text-ember">
-              {fieldErrors.qty}
-            </p>
-          )}
-
-          <div
-            className="mt-4 flex flex-wrap gap-2 border-t border-line pt-4"
-            role="group"
-            aria-label="Approximate quantity"
-          >
-            {QTY_CHIPS.map((chip) => (
-              <button
-                key={chip.label}
-                type="button"
-                onClick={() => setQty(chip.value)}
-                className={`rounded-[8px] border px-3.5 py-2 text-sm transition-colors ${
-                  qty === chip.value
-                    ? "border-volt bg-volt/10 text-paper"
-                    : "border-line text-paper/65 hover:border-line-strong"
-                }`}
-              >
-                {chip.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 2 — KIT */}
-      <section>
-        <Legend n="2" title="Your kit" />
-        <div className="mt-5">
-          {!customizeOpen ? (
-            <div className="rounded-lg border border-line-strong p-5 sm:p-6">
-              <p className="text-sm text-paper/75">
-                <span className="font-semibold text-paper">
-                  Not sure? We&apos;ll use our most popular setup:
-                </span>{" "}
-                {recommendedSummary}.
-              </p>
-              <button
-                type="button"
-                onClick={() => setCustomizeOpen(true)}
-                className="mt-3 text-sm font-semibold text-volt link-underline"
-              >
-                Customize these choices
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-5 rounded-lg border border-line-strong p-5 sm:p-6">
-              <button
-                type="button"
-                onClick={() => setCustomizeOpen(false)}
-                className="text-sm font-semibold text-volt link-underline"
-              >
-                ← Use the recommended setup instead
-              </button>
-              {groups.map((g) => {
-                const recId = recommendedId(g);
-                const showNotSure =
-                  g.type === "single" && selections[g.id] !== recId;
-                return (
-                  <div key={g.id}>
-                    <div className="flex items-baseline justify-between gap-3">
-                      <p className="field-label mb-0" id={`grp-${g.id}`}>{g.label}</p>
-                      {showNotSure && (
-                        <button
-                          type="button"
-                          onClick={() => setSingle(g.id, recId as string)}
-                          className="text-xs font-semibold text-volt link-underline"
-                        >
-                          Not sure? Use our pick
-                        </button>
-                      )}
-                    </div>
-                    <div
-                      className="mt-2 flex flex-wrap gap-2"
-                      role="group"
-                      aria-labelledby={`grp-${g.id}`}
-                    >
-                      {g.options.map((o) => {
-                        const on =
-                          g.type === "single"
-                            ? selections[g.id] === o.id
-                            : ((selections[g.id] as string[]) ?? []).includes(o.id);
-                        return (
-                          <button
-                            key={o.id}
-                            type="button"
-                            onClick={() =>
-                              g.type === "single"
-                                ? setSingle(g.id, o.id)
-                                : toggleMulti(g.id, o.id)
-                            }
-                            aria-pressed={on}
-                            className={`rounded-[8px] border px-3.5 py-2 text-sm transition-colors ${
-                              on
-                                ? "border-volt bg-volt/10 text-paper"
-                                : "border-line text-paper/65 hover:border-line-strong"
-                            }`}
-                          >
-                            {g.type === "multi" ? (on ? "✓ " : "+ ") : ""}
-                            {o.label}
-                            {o.recommended ? (
-                              <span className="ml-1.5 text-[0.65rem] uppercase tracking-wide text-volt/80">
-                                Recommended
-                              </span>
-                            ) : null}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* 3 — EXTRA DETAILS (sizes + roster, both optional, both deferred) */}
-      <section>
-        <Legend n="3" title="Quantity by size" />
-        <div className="mt-5">
-          <div className="space-y-6 rounded-lg border border-line-strong p-5 sm:p-6">
-            {/* exact sizes */}
+        <div className="mt-4">
+          <div className={`space-y-6 ${cardCls}`}>
             <div>
-              <div className="flex items-baseline justify-between">
-                <p className="field-label mb-0" id="grp-sizes">
-                  Quantity by size <span className="text-paper/55">(optional)</span>
-                </p>
-                <p className="text-xs text-paper/60" aria-live="polite">
-                  Adds up to <span className="text-paper/80">{sizesTotal}</span>
+              <div className="flex items-baseline justify-between" id="grp-sizes">
+                <p className="text-sm font-medium text-black">Set your quantity by size</p>
+                <p className="text-sm" aria-live="polite">
+                  <span className="text-base font-semibold text-black">{sizesTotal}</span>{" "}
+                  <span className="text-gray-500">units total</span>
                 </p>
               </div>
               <div
-                className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-5"
+                className="mt-3 flex flex-wrap gap-2"
                 role="group"
                 aria-labelledby="grp-sizes"
               >
                 {SIZES.map((s) => (
-                  <label key={s} className="flex flex-col">
-                    <span className="text-center text-[0.65rem] uppercase tracking-wide text-paper/60">
+                  <div
+                    key={s}
+                    className="flex items-center gap-1.5 rounded-md border border-gray-300 px-2 py-1.5"
+                  >
+                    <span className="w-8 text-center text-xs font-medium text-gray-600">
                       {s}
                     </span>
-                    <input
-                      type="number"
-                      min={0}
-                      inputMode="numeric"
-                      aria-label={`Quantity, size ${s}`}
-                      value={sizes[s] ?? ""}
-                      onChange={(e) =>
-                        setSizes((p) => ({ ...p, [s]: Math.max(0, Number(e.target.value) || 0) }))
-                      }
-                      placeholder="0"
-                      className="field !px-2 !py-1.5 text-center text-sm"
-                    />
-                  </label>
+                    <button
+                      type="button"
+                      aria-label={`Decrease size ${s} quantity`}
+                      onClick={() => bumpSize(s, -1)}
+                      className={stepBtn}
+                    >
+                      −
+                    </button>
+                    <span className="w-5 text-center text-sm tabular-nums text-black">
+                      {sizes[s] ?? 0}
+                    </span>
+                    <button
+                      type="button"
+                      aria-label={`Increase size ${s} quantity`}
+                      onClick={() => bumpSize(s, 1)}
+                      className={stepBtn}
+                    >
+                      +
+                    </button>
+                  </div>
                 ))}
               </div>
-              {sizesTotal > 0 && sizesTotal !== qty && (
-                <p className="mt-1.5 text-xs text-paper/60">
-                  This adds up to {sizesTotal} — we&apos;ll confirm final sizes with
-                  you before production.
+              {fieldErrors.sizes ? (
+                <p role="alert" className="mt-2 text-xs font-medium text-red-600">
+                  {fieldErrors.sizes}
+                </p>
+              ) : (
+                <p className="mt-1.5 text-xs text-gray-500">
+                  A rough headcount is enough to start — exact sizes can be
+                  confirmed with you later.
                 </p>
               )}
             </div>
 
             {/* players */}
-            <div className="border-t border-line pt-5">
+            <div className="border-t border-gray-200 pt-5">
               <div className="flex items-baseline justify-between">
-                <p className="field-label mb-0">
+                <p className="text-sm font-medium text-black">
                   Player names &amp; numbers{" "}
-                  <span className="text-paper/55">(optional)</span>
+                  <span className="font-normal text-gray-500">(optional)</span>
                 </p>
                 {players.length > 0 && (
-                  <p className="text-xs text-paper/60">
+                  <p className="text-xs text-gray-500">
                     {players.length} player{players.length === 1 ? "" : "s"}
                   </p>
                 )}
@@ -549,7 +343,7 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
                 <ul className="mt-3 space-y-2">
                   {players.map((p, i) => (
                     <li key={p.id} className="flex items-center gap-2">
-                      <span className="w-6 shrink-0 text-center text-xs font-semibold text-paper/60">
+                      <span className="w-6 shrink-0 text-center text-xs font-medium text-gray-500">
                         {i + 1}
                       </span>
                       <input
@@ -557,7 +351,7 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
                         onChange={(e) => updatePlayer(p.id, { name: e.target.value })}
                         placeholder="Name on back"
                         aria-label={`Player ${i + 1} name`}
-                        className="field !py-2 min-w-0 flex-1 text-sm"
+                        className={`${inputBase} min-w-0 flex-1`}
                       />
                       <input
                         value={p.number}
@@ -569,13 +363,13 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
                         inputMode="numeric"
                         placeholder="No."
                         aria-label={`Player ${i + 1} number`}
-                        className="field !w-16 !py-2 shrink-0 text-center text-sm"
+                        className={`${inputBase} !w-16 shrink-0 text-center`}
                       />
                       <button
                         type="button"
                         onClick={() => removePlayer(p.id)}
                         aria-label={`Remove player ${i + 1}`}
-                        className="grid h-10 w-10 shrink-0 place-items-center rounded-[6px] border border-line text-paper/60 transition-colors hover:border-ember hover:text-ember"
+                        className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-gray-300 text-gray-500 transition-colors hover:border-red-400 hover:text-red-600"
                       >
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                           <path d="M6 6l12 12M18 6L6 18" />
@@ -589,9 +383,9 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
               <button
                 type="button"
                 onClick={addPlayer}
-                className="mt-3 inline-flex items-center gap-2.5 rounded-[8px] border border-line-strong py-2 pl-2 pr-4 text-sm font-medium text-paper/80 transition-colors hover:border-volt hover:text-volt"
+                className="mt-3 inline-flex items-center gap-2.5 rounded-md border border-gray-300 py-2 pl-2 pr-4 text-sm font-medium text-black transition-colors hover:border-black"
               >
-                <span className="grid h-6 w-6 place-items-center rounded-full bg-volt/15 text-[0.72rem] font-bold text-volt">
+                <span className="grid h-6 w-6 place-items-center rounded-full bg-gray-100 text-[0.72rem] font-semibold text-black">
                   {players.length + 1}
                 </span>
                 Add {players.length === 0 ? "new" : "another"} player
@@ -601,20 +395,79 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
         </div>
       </section>
 
+      {/* 2 — FABRIC */}
+      <section>
+        <Legend n="2" title="Fabric" />
+        <div className={`mt-4 ${cardCls}`}>
+          <p className="text-sm font-medium text-black" id="grp-fabric">{fabric.label}</p>
+          <div className="mt-2 flex flex-wrap gap-2" role="group" aria-labelledby="grp-fabric">
+            {fabric.options.map((o) => (
+              <button
+                key={o.id}
+                type="button"
+                onClick={() => setFabricId(o.id)}
+                aria-pressed={fabricId === o.id}
+                className={`${pillBase} ${fabricId === o.id ? pillOn : pillOff}`}
+              >
+                {o.label}
+                {o.recommended ? (
+                  <span
+                    className={`ml-1.5 text-[0.65rem] uppercase tracking-wide ${
+                      fabricId === o.id ? "text-white/70" : "text-gray-400"
+                    }`}
+                  >
+                    Recommended
+                  </span>
+                ) : null}
+              </button>
+            ))}
+          </div>
+          {fabric.options.find((o) => o.id === fabricId)?.desc && (
+            <p className="mt-3 text-xs text-gray-500">
+              {fabric.options.find((o) => o.id === fabricId)?.desc}
+            </p>
+          )}
+        </div>
+      </section>
+
+      {/* 3 — DELIVERY */}
+      <section>
+        <Legend n="3" title="Estimated delivery" />
+        <div className={`mt-4 ${cardCls}`}>
+          <p className="text-sm text-gray-600">How soon do you need this order?</p>
+          <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Estimated delivery">
+            {DELIVERY_OPTIONS.map((o) => (
+              <button
+                key={o.id}
+                type="button"
+                onClick={() => setDelivery(o.id)}
+                aria-pressed={delivery === o.id}
+                className={`${pillBase} ${delivery === o.id ? pillOn : pillOff}`}
+              >
+                {o.label}
+                <span
+                  className={`ml-1.5 text-[0.65rem] uppercase tracking-wide ${
+                    delivery === o.id ? "text-white/70" : "text-gray-400"
+                  }`}
+                >
+                  {o.desc}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* 4 — REFERENCE */}
       <section>
         <Legend n="4" title="Reference design" />
-        <div className="mt-5 space-y-4">
+        <div className="mt-4 space-y-4">
           <div className="flex flex-wrap gap-2" role="group" aria-label="Do you have a design?">
             <button
               type="button"
               onClick={() => setNeedsDesignHelp(false)}
               aria-pressed={!needsDesignHelp}
-              className={`rounded-[8px] border px-3.5 py-2 text-sm transition-colors ${
-                !needsDesignHelp
-                  ? "border-volt bg-volt/10 text-paper"
-                  : "border-line text-paper/65 hover:border-line-strong"
-              }`}
+              className={`${pillBase} ${!needsDesignHelp ? pillOn : pillOff}`}
             >
               I have a design
             </button>
@@ -622,26 +475,24 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
               type="button"
               onClick={() => setNeedsDesignHelp(true)}
               aria-pressed={needsDesignHelp}
-              className={`rounded-[8px] border px-3.5 py-2 text-sm transition-colors ${
-                needsDesignHelp
-                  ? "border-volt bg-volt/10 text-paper"
-                  : "border-line text-paper/65 hover:border-line-strong"
-              }`}
+              className={`${pillBase} ${needsDesignHelp ? pillOn : pillOff}`}
             >
               I don&apos;t have a design yet — I need design help
             </button>
           </div>
 
-          <div className="space-y-4 rounded-lg border border-line-strong p-5 sm:p-6">
+          <div className={`space-y-4 ${cardCls}`}>
           {needsDesignHelp ? (
-            <p className="text-sm text-paper/70">
+            <p className="text-sm text-gray-600">
               No problem — add any colour or style ideas below and our studio
               will design your kit with you, no charge to get started.
             </p>
           ) : (
             <div>
-              <p className="field-label" id="grp-file">Upload the design you have in mind</p>
-              <label className="file-drop flex cursor-pointer items-center gap-4 rounded-md border border-dashed border-line-strong bg-ink p-4 transition-colors hover:border-volt">
+              <p className="text-sm font-medium text-black" id="grp-file">
+                Upload the design you have in mind
+              </p>
+              <label className="mt-2 flex cursor-pointer items-center gap-4 rounded-md border border-dashed border-gray-300 bg-white p-4 transition-colors hover:border-black">
                 <input
                   ref={fileInput}
                   type="file"
@@ -660,7 +511,7 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
                     className="h-16 w-16 rounded-sm object-cover"
                   />
                 ) : (
-                  <span className="grid h-16 w-16 shrink-0 place-items-center rounded-sm border border-line text-paper/60">
+                  <span className="grid h-16 w-16 shrink-0 place-items-center rounded-sm border border-gray-300 text-gray-400">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M12 16V4m0 0 4 4m-4-4L8 8" />
                       <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
@@ -668,12 +519,12 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
                   </span>
                 )}
                 <span className="text-sm">
-                  <span className="font-semibold text-paper">
+                  <span className="font-medium text-black">
                     {file ? file.name : "Choose a file"}
                   </span>
                   <span
                     id="file-status"
-                    className="mt-0.5 block text-xs text-paper/60"
+                    className="mt-0.5 block text-xs text-gray-500"
                     aria-live="polite"
                   >
                     {isUploading
@@ -688,13 +539,13 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="mt-0.5 block truncate text-xs text-volt link-underline"
+                      className="mt-0.5 block truncate text-xs text-black underline"
                     >
                       {referenceUrl}
                     </a>
                   )}
                   {fieldErrors.file && (
-                    <span role="alert" className="mt-0.5 block text-xs font-medium text-ember">
+                    <span role="alert" className="mt-0.5 block text-xs font-medium text-red-600">
                       {fieldErrors.file}
                     </span>
                   )}
@@ -704,7 +555,7 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
           )}
 
           <div>
-            <label htmlFor="notes" className="field-label">
+            <label htmlFor="notes" className="mb-1.5 block text-sm font-medium text-black">
               Design notes
             </label>
             <textarea
@@ -713,7 +564,7 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
               value={designNotes}
               onChange={(e) => setDesignNotes(e.target.value)}
               placeholder="Team colours (Pantone if you have them), sponsor placement, collar style, deadline, links to artwork…"
-              className="field resize-none"
+              className={`${inputBase} resize-none`}
             />
           </div>
           </div>
@@ -723,12 +574,12 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
       {/* 5 — DETAILS */}
       <section>
         <Legend n="5" title="Your details" />
-        <p className="mt-3 text-sm text-paper/55">
-          So we can send your {mode === "buy" ? "confirmation" : "quote and proof"}{" "}
-          back to you. We never share these or add you to a mailing list.
+        <p className="mt-2 text-sm text-gray-600">
+          So we can send your quote and proof back to you. We never share
+          these or add you to a mailing list.
         </p>
 
-        <div className="mt-5 rounded-lg border border-line-strong p-5 sm:p-6">
+        <div className={`mt-4 ${cardCls}`}>
           <div className="grid gap-x-4 gap-y-5 sm:grid-cols-2">
             <Field label="Your name" required error={fieldErrors.contactName}>
               <input
@@ -743,11 +594,7 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
             <Field
               label="Email"
               required
-              hint={
-                mode === "buy"
-                  ? "Where your receipt and order confirmation will land"
-                  : "Where your quote and digital proof will land"
-              }
+              hint="Where your quote and digital proof will land"
               error={fieldErrors.email}
             >
               <input
@@ -762,21 +609,6 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
               />
             </Field>
             <Field
-              label="Country"
-              required
-              hint="Sets your shipping options and lead time"
-              error={fieldErrors.country}
-            >
-              <input
-                id="qf-country"
-                className={fieldCls(fieldErrors.country)}
-                placeholder="United Kingdom"
-                autoComplete="country-name"
-                value={c.country}
-                onChange={setC1("country")}
-              />
-            </Field>
-            <Field
               label="Phone"
               required
               hint="So we can reach you quickly about your order"
@@ -787,29 +619,24 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
                 type="tel"
                 autoComplete="tel"
                 className={fieldCls(fieldErrors.phone)}
-                placeholder="+44 7700 900123"
+                placeholder="+1 (555) 123-4567"
                 value={c.phone}
                 onChange={setC1("phone")}
               />
             </Field>
-            <Field label="Club / organisation">
+            <Field
+              label="Country"
+              required
+              hint="Sets your shipping options and lead time"
+              error={fieldErrors.country}
+            >
               <input
-                id="qf-organization"
-                className={fieldCls()}
-                placeholder="Riverside Hockey Club"
-                autoComplete="organization"
-                value={c.organization}
-                onChange={setC1("organization")}
-              />
-            </Field>
-            <Field label="City">
-              <input
-                id="qf-city"
-                className={fieldCls()}
-                placeholder="Manchester"
-                autoComplete="address-level2"
-                value={c.city}
-                onChange={setC1("city")}
+                id="qf-country"
+                className={fieldCls(fieldErrors.country)}
+                placeholder="United States"
+                autoComplete="country-name"
+                value={c.country}
+                onChange={setC1("country")}
               />
             </Field>
           </div>
@@ -819,46 +646,25 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
       {status === "error" && (
         <p
           role="alert"
-          className="rounded-md border border-ember/40 bg-ember/10 px-4 py-3 text-sm font-medium text-ember"
+          className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
         >
           {errorMsg}
         </p>
       )}
 
       <div>
-        {mode === "buy" && (
-          <div className="mb-5 rounded-lg border border-volt/40 bg-volt/5 p-5">
-            <div className="flex items-baseline justify-between">
-              <p className="kicker text-volt">{quote.tier.label} price</p>
-              <p className="text-xs text-paper/60">{usd(quote.unitPriceDiscounted)} / unit</p>
-            </div>
-            <p className="mt-1 font-display text-3xl text-paper">{usd(quote.total)}</p>
-            <p className="mt-1 text-xs text-paper/60">
-              For {qty} units, all options included. Larger orders (
-              {BULK_THRESHOLD}+ units) get better per-unit pricing via a free
-              quote instead.
-            </p>
-          </div>
-        )}
-
         <button
           type="submit"
           disabled={status === "sending" || isUploading}
-          className="w-full rounded-[8px] bg-lime px-6 py-4 text-[0.78rem] font-semibold uppercase tracking-[0.14em] text-volt-ink transition-colors hover:opacity-90 disabled:opacity-50 sm:w-auto sm:px-10"
+          className="w-full rounded-md bg-black px-6 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-gray-800 disabled:opacity-50 sm:w-auto sm:px-10"
         >
           {status === "sending"
             ? "Sending…"
             : isUploading
               ? "Uploading design…"
-              : mode === "buy"
-                ? `Pay & secure my order — ${usd(quote.total)}`
-                : "Get my free quote"}
+              : "Get my free quote"}
         </button>
-        <p className="mt-3 text-xs text-paper/60">
-          {mode === "buy"
-            ? `Secure checkout · No hidden fees · Confirmation within ${FACTS.quoteReplyDays} business day`
-            : QUOTE_TRUST_LINE}
-        </p>
+        <p className="mt-3 text-xs text-gray-500">{QUOTE_TRUST_LINE}</p>
       </div>
     </form>
   );
@@ -866,11 +672,11 @@ export function QuoteForm({ sport, groups }: { sport: Sport; groups: OptionGroup
 
 function Legend({ n, title }: { n: string; title: string }) {
   return (
-    <div className="flex items-center gap-3 border-b-2 border-line-strong pb-3">
-      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[8px] bg-lime font-display text-xl leading-none text-volt-ink">
-        {n}
-      </span>
-      <h2 className="display-3 text-2xl font-bold text-paper sm:text-3xl">{title}</h2>
+    <div className="flex items-baseline gap-2 border-b border-gray-200 pb-2">
+      <span className="text-sm font-medium text-gray-400">{n}.</span>
+      <h2 className="font-sans text-xl font-semibold normal-case leading-snug tracking-normal text-black sm:text-2xl">
+        {title}
+      </h2>
     </div>
   );
 }
@@ -902,17 +708,9 @@ function Field({
 
   return (
     <div>
-      <label htmlFor={controlId} className="mb-1.5 flex items-center gap-2">
-        <span className="text-[0.82rem] font-semibold text-paper">{label}</span>
-        {required ? (
-          <span className="rounded-full bg-volt/15 px-1.5 py-0.5 text-[0.58rem] font-bold uppercase tracking-[0.1em] text-volt">
-            Required
-          </span>
-        ) : (
-          <span className="text-[0.58rem] font-semibold uppercase tracking-[0.12em] text-paper/55">
-            Optional
-          </span>
-        )}
+      <label htmlFor={controlId} className="mb-1.5 flex items-center gap-1">
+        <span className="text-sm font-medium text-black">{label}</span>
+        {required && <span className="text-sm text-red-600">*</span>}
       </label>
       {isValidElement(children)
         ? cloneElement(
@@ -926,12 +724,12 @@ function Field({
           )
         : children}
       {hint && !error && (
-        <p id={hintId} className="mt-1.5 text-xs text-paper/60">
+        <p id={hintId} className="mt-1.5 text-xs text-gray-500">
           {hint}
         </p>
       )}
       {error && (
-        <p id={errId} role="alert" className="mt-1.5 text-xs font-medium text-ember">
+        <p id={errId} role="alert" className="mt-1.5 text-xs font-medium text-red-600">
           {error}
         </p>
       )}

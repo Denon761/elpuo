@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { DESIGN_METHOD, EXTRAS, FABRIC, KIT, MIN_ORDER_QTY, TECHNIQUE, getSport } from "@/lib/catalog";
+import { FABRIC, MIN_ORDER_QTY, getSport } from "@/lib/catalog";
 import { customerConfirmationEmail } from "@/lib/emails";
 import { quoteRef } from "@/lib/format";
 import { clientIp, getMailer, looksLikeSpam, MailNotConfiguredError, rateLimit } from "@/lib/mailer";
@@ -8,17 +8,18 @@ export const runtime = "nodejs";
 
 const MAX_FILE_BYTES = 8 * 1024 * 1024;
 
-const GROUPS = { fabric: FABRIC, method: DESIGN_METHOD, kit: KIT, technique: TECHNIQUE };
+const DELIVERY_LABELS: Record<string, string> = {
+  "1week": "Within 1 week",
+  "2weeks": "Within 2 weeks",
+  "1month": "Within 1 month",
+};
 
-function optionLabel(groupKey: keyof typeof GROUPS, id: string): string {
-  return GROUPS[groupKey].options.find((o) => o.id === id)?.label ?? id ?? "—";
+function fabricLabel(id: string): string {
+  return FABRIC.options.find((o) => o.id === id)?.label ?? id ?? "—";
 }
 
-function extrasLabels(ids: string[]): string {
-  if (!ids.length) return "None";
-  return ids
-    .map((id) => EXTRAS.options.find((o) => o.id === id)?.label ?? id)
-    .join(", ");
+function deliveryLabel(id: string): string {
+  return DELIVERY_LABELS[id] ?? id ?? "—";
 }
 
 function esc(s: string): string {
@@ -138,31 +139,26 @@ export async function POST(req: Request) {
       .join("  ") || "Not specified — approximate only";
 
   const designHelp = str("designHelp") === "yes";
-  const extras = form.getAll("extras").map((v) => v.toString());
 
   const ref = quoteRef();
   const rows: [string, string][] = [
     ["Reference", ref],
     ["Sport", sport.name],
-    ["Fabric", optionLabel("fabric", str("fabric"))],
-    ["Decoration method", optionLabel("method", str("method"))],
-    ["Kit pieces", optionLabel("kit", str("kit"))],
-    ["Names / numbers", optionLabel("technique", str("technique"))],
-    ["Add-ons", extrasLabels(extras)],
+    ["Fabric", fabricLabel(str("fabric"))],
     ["Total quantity", String(totalQty)],
     ["Size breakdown", sizeLine],
     ["Players (names / numbers)", str("roster") || "—"],
+    ["Estimated delivery", deliveryLabel(str("delivery"))],
     ["Design notes", str("designNotes") || "—"],
     [
       "Reference design",
       designHelp ? "Needs design help — no file uploaded" : referenceUrl || "None uploaded",
     ],
     ["—", "—"],
-    ["Organisation", str("organization") || "—"],
     ["Contact name", contactName],
     ["Email", email],
     ["Phone", str("phone") || "—"],
-    ["Location", [str("city"), str("country")].filter(Boolean).join(", ") || "—"],
+    ["Country", str("country") || "—"],
   ];
 
   const text = rows.map(([k, v]) => `${k}: ${v}`).join("\n");
@@ -226,13 +222,10 @@ export async function POST(req: Request) {
       contactEmail: studioAddresses[0] || fromAddress,
       summary: [
         ["Sport", sport.name],
-        ["Fabric", optionLabel("fabric", str("fabric"))],
-        ["Decoration", optionLabel("method", str("method"))],
-        ["Kit pieces", optionLabel("kit", str("kit"))],
-        ["Names & numbers", optionLabel("technique", str("technique"))],
-        ["Add-ons", extrasLabels(extras)],
+        ["Fabric", fabricLabel(str("fabric"))],
         ["Total quantity", String(totalQty)],
         ["Sizes", sizeLine],
+        ["Estimated delivery", deliveryLabel(str("delivery"))],
         [
           "Reference design",
           designHelp ? "You asked us for design help" : referenceUrl ? "Uploaded" : "None",
